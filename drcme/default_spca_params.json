@@ -1,0 +1,80 @@
+{
+    "first_ap_v": {
+        "n_components": 7,
+        "nonzero_component_list": [400, 350, 400, 350, 350, 375, 350],
+        "use_corr": false,
+        "range": [0, 450]
+    },
+    "first_ap_dv": {
+        "n_components": 9,
+        "nonzero_component_list": [225, 175, 225, 250, 150, 150, 150, 130, 130],
+        "use_corr": false,
+        "range": [450, 897]
+    },
+    "isi_shape": {
+        "n_components": 4,
+        "nonzero_component_list": [90, 70, 80, 80],
+        "use_corr": false,
+        "range": [0, 100]
+    },
+    "step_subthresh": {
+        "n_components": 3,
+        "nonzero_component_list": [700, 700, 550],
+        "use_corr": false,
+        "range": [0, 700]
+    },
+    "subthresh_norm": {
+        "n_components": 7,
+        "nonzero_component_list": [110, 90, 50, 30, 90, 80, 90],
+        "use_corr": false,
+        "range": [0, 140]
+    },
+    "spiking_rate": {
+        "n_components": 6,
+        "nonzero_component_list": [95, 80, 100, 70, 70, 70],
+        "use_corr": false,
+        "range": [0, 120]
+    },
+    "spiking_inst_freq": {
+        "n_components": 6,
+        "nonzero_component_list": [300, 275, 225, 275, 250, 225],
+        "use_corr": false,
+        "range": [120, 420]
+    },
+    "spiking_updown": {
+        "n_components": 3,
+        "nonzero_component_list": [300, 275, 250],
+        "use_corr": false,
+        "range": [420, 720]
+    },
+    "spiking_peak_v": {
+        "n_components": 3,
+        "nonzero_component_list": [300, 275, 250],
+        "use_corr": false,
+        "range": [720, 1020]
+    },
+    "spiking_fast_trough_v": {
+        "n_components": 3,
+        "nonzero_component_list": [300, 275, 225],
+        "use_corr": false,
+        "range": [1020, 1320]
+    },
+    "spiking_threshold_v": {
+        "n_components": 5,
+        "nonzero_component_list": [300, 275, 250, 225, 250],
+        "use_corr": false,
+        "range": [2220, 2520]
+    },
+    "spiking_width": {
+        "n_components": 3,
+        "nonzero_component_list": [300, 200, 225],
+        "use_corr": false,
+        "range": [2520, 2820]
+    },
+    "inst_freq_norm": {
+        "n_components": 8,
+        "nonzero_component_list": [300, 250, 225, 250, 200, 100, 225, 225],
+        "use_corr": false,
+        "range": [0, 300]
+    }
+}
