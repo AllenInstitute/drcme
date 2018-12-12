@@ -1,0 +1,7 @@
+{
+	"components_file": "/allen/programs/celltypes/workgroups/ivscc/nathang/single-cell-ephys/dev/all_T301/sparse_pca_components_T301.csv",
+	"tau_file": "/allen/programs/celltypes/workgroups/ivscc/nathang/single-cell-ephys/dev/all_T301/gmm_tau.csv",
+	"labels_file": "/allen/programs/celltypes/workgroups/ivscc/nathang/single-cell-ephys/dev/all_T301/gmm_labels.csv",
+	"bic_file": "/allen/programs/celltypes/workgroups/ivscc/nathang/single-cell-ephys/dev/all_T301/gmm_bic.csv",
+  "outliers": []
+}
