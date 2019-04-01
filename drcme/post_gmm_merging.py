@@ -177,6 +177,11 @@ def entropy_combi(tau, labels, K_bic, piecewise_components=2):
 
 def fit_piecewise(cumul_merges, entropies, n_parts):
     total_err = np.inf
+
+    if len(entropies) < n_parts + 2:
+        logging.info("Not enough clusters for piecewise fit")
+        return (None,), (0,)
+
     if n_parts == 2:
         for c in range(1, len(entropies)-1):
             x1 = cumul_merges[:c + 1]
@@ -220,6 +225,8 @@ def fit_piecewise(cumul_merges, entropies, n_parts):
                     total_err = err
                     best_fits = (fit1[0], fit2[0], fit3[0])
                     cp = (c, d)
+    else:
+        raise("Wrong value for n_parts")
 
     return best_fits, cp
 
