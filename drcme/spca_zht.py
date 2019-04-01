@@ -2,6 +2,7 @@
 
 import numpy as np
 import scipy
+import scipy.linalg as sl
 import lars_fort
 import logging
 
@@ -159,8 +160,8 @@ def _solvebeta(x, y, paras, max_steps=None, sparse=None, eps=2.22e-16):
             else:
                 action = -dropid
 
-            Gi1 = scipy.linalg.solve_triangular(R["data"],
-                    scipy.linalg.solve_triangular(R["data"], Sign, trans=1))
+            Gi1 = sl.solve_triangular(R["data"],
+                    sl.solve_triangular(R["data"], Sign, trans=1))
             A = 1. / np.sqrt((Gi1 * Sign).sum())
             w = A * Gi1
             u1 = np.squeeze(x[:, active].dot(w * d2))
@@ -228,7 +229,7 @@ def _updateRR(xnew, R, xold, lambda_val, eps=2.22e-16):
         return R
 
     Xtx = xnew.dot(xold) / (1. + lambda_val)
-    r = scipy.linalg.solve_triangular(R["data"], Xtx, trans=1)
+    r = sl.solve_triangular(R["data"], Xtx, trans=1)
     rpp = norm_xnew ** 2 - (r ** 2).sum()
     rank = R["rank"]
     if rpp <= eps:
