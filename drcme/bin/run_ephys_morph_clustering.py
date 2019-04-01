@@ -24,6 +24,7 @@ class MeClusteringParameters(ags.ArgSchema):
 def main(ephys_file, morph_file,
          weights, cocluster_matrix_file,
          cluster_labels_file, jaccards_file, ordering_file,
+         specimen_id_file,
          **kwargs):
     # Load the data
     ephys_data = pd.read_csv(ephys_file, index_col=0)
@@ -50,6 +51,7 @@ def main(ephys_file, morph_file,
     np.savetxt(cocluster_matrix_file, shared)
     pd.DataFrame(clust_labels, index=morph_data_ephys.index.values).to_csv(cluster_labels_file)
     np.savetxt(ordering_file, new_order, fmt="%d")
+    np.savetxt(specimen_id_file, morph_data_ephys.index.values, fmt="%d")
 
     logging.info("Evaluating cluster stability")
     jaccards = emc.subsample_run(clust_labels,
