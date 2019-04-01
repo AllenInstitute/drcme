@@ -1,0 +1,15 @@
+{
+	"components_file": "/allen/programs/celltypes/workgroups/ivscc/nathang/spca_output/exc_H301/sparse_pca_components_H301.csv",
+	"tau_file": "/allen/programs/celltypes/workgroups/ivscc/nathang/ephys_clust_output/exc_H301/gmm_tau.csv",
+	"labels_file": "/allen/programs/celltypes/workgroups/ivscc/nathang/ephys_clust_output/exc_H301/gmm_labels.csv",
+	"bic_file": "/allen/programs/celltypes/workgroups/ivscc/nathang/ephys_clust_output/exc_H301/gmm_bic.csv",
+	"merge_info_file": "/allen/programs/celltypes/workgroups/ivscc/nathang/ephys_clust_output/exc_H301/entropy_merge_info.json",
+	"post_merge_tau_file": "/allen/programs/celltypes/workgroups/ivscc/nathang/ephys_clust_output/exc_H301/post_cumul_merges_tau.csv",
+	"post_merge_labels_file": "/allen/programs/celltypes/workgroups/ivscc/nathang/ephys_clust_output/exc_H301/post_cumul_merges_labels.csv",
+    "jaccard_file": "/allen/programs/celltypes/workgroups/ivscc/nathang/ephys_clust_output/exc_H301/jaccard_means.csv",
+    "etypes_file": "/allen/programs/celltypes/workgroups/ivscc/nathang/ephys_clust_output/exc_H301/etype_labels.csv",
+    "post_merge_proba_file": "/allen/programs/celltypes/workgroups/ivscc/nathang/ephys_clust_output/exc_H301/post_merge_proba.txt",
+    "merge_unstable_info_file": "/allen/programs/celltypes/workgroups/ivscc/nathang/ephys_clust_output/exc_H301/merging_unstable_info.json",
+	"entropy_piecewise_components": 3,
+    "outliers": []
+}

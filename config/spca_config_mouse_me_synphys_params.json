@@ -1,0 +1,15 @@
+{
+	"params_file": "/local1/repos/drcme/config/synphys_spca_params.json",
+	"output_dir": "/allen/programs/celltypes/workgroups/ivscc/nathang/spca_output",
+	"output_code": "mME_synphys_params",
+	"use_noise": false,
+	"datasets": [
+	  {
+	    "project": "T301",
+	    "data_dir": "/allen/programs/celltypes/workgroups/ivscc/nathang/single-cell-ephys/single_cell_ephys",
+	    "dendrite_type": "all",
+	    "allow_missing_structure": false,
+	    "allow_missing_dendrite": false
+	  }
+	]
+}

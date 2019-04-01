@@ -1,0 +1,15 @@
+{
+	"params_file": "/local1/repos/drcme/config/met_spca_params.json",
+	"output_dir": "/allen/programs/celltypes/workgroups/ivscc/nathang/spca_output",
+	"output_code": "mMET_2018",
+	"use_noise": false,
+	"datasets": [
+    {
+	    "project": "mMET_2018",
+	    "data_dir": "/allen/programs/celltypes/workgroups/ivscc/nathang/fv_output",
+	    "dendrite_type": "all",
+	    "allow_missing_structure": true,
+	    "allow_missing_dendrite": true
+	  }
+	]
+}

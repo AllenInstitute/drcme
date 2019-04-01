@@ -1,0 +1,23 @@
+{
+	"params_file": "/local1/repos/drcme/config/met_spca_params.json",
+	"output_dir": "/allen/programs/celltypes/workgroups/ivscc/nathang/spca_output",
+	"output_code": "human_me_exc_23_inh",
+	"use_noise": false,
+	"datasets": [
+	  {
+	    "project": "H301",
+	    "data_dir": "/allen/programs/celltypes/workgroups/ivscc/nathang/fv_output",
+	    "dendrite_type": "aspiny",
+	    "allow_missing_structure": false,
+	    "allow_missing_dendrite": false
+	  },
+    {
+	    "project": "H301",
+	    "data_dir": "/allen/programs/celltypes/workgroups/ivscc/nathang/fv_output",
+	    "dendrite_type": "spiny",
+	    "allow_missing_structure": false,
+	    "allow_missing_dendrite": false,
+	    "limit_to_cortical_layers": ["Layer2", "Layer3"]
+	  }
+	]
+}

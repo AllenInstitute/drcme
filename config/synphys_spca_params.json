@@ -1,15 +1,15 @@
 {
     "first_ap_v": {
         "n_components": 7,
-        "nonzero_component_list": [400, 350, 400, 350, 350, 375, 350],
+        "nonzero_component_list": [133, 117, 133, 117, 117, 125, 117],
         "use_corr": false,
-        "range": [0, 450]
+        "range": [150, 300]
     },
     "first_ap_dv": {
         "n_components": 9,
-        "nonzero_component_list": [225, 175, 225, 250, 150, 150, 150, 130, 130],
+        "nonzero_component_list": [75, 58, 75, 83, 50, 50, 50, 43, 43],
         "use_corr": false,
-        "range": [450, 897]
+        "range": [599, 748]
     },
     "isi_shape": {
         "n_components": 4,
@@ -33,49 +33,49 @@
         "n_components": 6,
         "nonzero_component_list": [47, 40, 50, 35, 35, 35],
         "use_corr": false,
-        "range": [0, 20, 40, 60, 80, 100]
+        "range": [0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 110]
     },
     "spiking_inst_freq": {
         "n_components": 6,
         "nonzero_component_list": [150, 137, 112, 137, 125, 112],
         "use_corr": false,
-        "range": [120, 170, 220, 270, 320, 370]
+        "range": [120, 145, 170, 195, 220, 245, 270, 295, 320, 345, 370, 395]
     },
     "spiking_updown": {
         "n_components": 3,
         "nonzero_component_list": [150, 137, 125],
         "use_corr": false,
-        "range": [420, 470, 520, 570, 620, 670]
+        "range": [420, 445, 470, 495, 520, 545, 570, 595, 620, 645, 670, 695]
     },
     "spiking_peak_v": {
         "n_components": 3,
         "nonzero_component_list": [150, 137, 125],
         "use_corr": false,
-        "range": [720, 770, 820, 870, 920, 970]
+        "range": [720, 745, 770, 795, 820, 845, 870, 895, 920, 945, 970, 995]
     },
     "spiking_fast_trough_v": {
         "n_components": 3,
         "nonzero_component_list": [150, 137, 112],
         "use_corr": false,
-        "range": [1020, 1070, 1120, 1170, 1220, 1270]
+        "range": [1020, 1045, 1070, 1095, 1120, 1145, 1170, 1195, 1220, 1245, 1270, 1295]
     },
     "spiking_threshold_v": {
         "n_components": 5,
         "nonzero_component_list": [150, 137, 125, 112, 125],
         "use_corr": false,
-        "range": [2220, 2270, 2320, 2370, 2420, 2470]
+        "range": [2220, 2245, 2270, 2295, 2320, 2345, 2370, 2395, 2420, 2445, 2470, 2495]
     },
     "spiking_width": {
         "n_components": 3,
         "nonzero_component_list": [150, 100, 112],
         "use_corr": false,
-        "range": [2520, 2570, 2620, 2670, 2720, 2770]
+        "range": [2520, 2545, 2570, 2595, 2620, 2645, 2670, 2695, 2720, 2745, 2770, 2795]
     },
     "inst_freq_norm": {
         "n_components": 8,
         "nonzero_component_list": [150, 125, 112, 125, 100,  50, 112, 112],
         "use_corr": false,
         "range": [0, 150],
-        "step_num": 50
+        "step_num": 25
     }
 }
