@@ -7,9 +7,11 @@ import os.path
 
 
 def load_data(project="T301", use_noise=False, dendrite_type="all", need_structure=True, include_dend_type_null=False,
+              limit_to_cortical_layers=None,
               params_file="/allen/programs/celltypes/workgroups/ivscc/nathang/single-cell-ephys/dev/default_spca_params.json",
               restriction_file=None,
-              base_dir="/allen/programs/celltypes/workgroups/ivscc/nathang/single-cell-ephys/single_cell_ephys"):
+              base_dir="/allen/programs/celltypes/workgroups/ivscc/nathang/single-cell-ephys/single_cell_ephys",
+              step_num=50):
     # Import data
     metadata = pd.read_csv(os.path.join(base_dir, "fv_metadata_{:s}.csv".format(project)), index_col=0)
 
@@ -175,6 +177,10 @@ def load_data(project="T301", use_noise=False, dendrite_type="all", need_structu
         logging.info("Excluding dendrite type = NA")
         logging.info("Cells with dendrite type specified or missing (does not include NA): {:d}".format(int(np.sum(inclusion_mask))))
 
+    if limit_to_cortical_layers is not None:
+        inclusion_mask = inclusion_mask & meta_df["cortex_layer"].isin(limit_to_cortical_layers)
+        logging.info("Cells in restricted cortical layers: {:d}".format(int(np.sum(inclusion_mask))))
+
     specimen_ids = specimen_ids[inclusion_mask]
     step_subthresh = step_subthresh[inclusion_mask, :]
     subthresh_norm = subthresh_norm[inclusion_mask, :]
@@ -203,10 +209,10 @@ def load_data(project="T301", use_noise=False, dendrite_type="all", need_structu
             noise = noise[inclusion_mask, :]
         meta_df = meta_df.loc[inclusion_mask, :]
 
-    spca_zht_params = define_spca_parameters(filename=params_file)
+    spca_zht_params, step_num = define_spca_parameters(filename=params_file)
 
     indices = spca_zht_params["spiking_inst_freq"][3]
-    step_num = 50
+    logging.debug("calculating inst_freq_norm with step_num {:d}".format(step_num))
     inst_freq_norm = spiking[:, indices]
     n_steps = len(indices) / step_num
     for i in range(n_steps):
@@ -217,7 +223,10 @@ def load_data(project="T301", use_noise=False, dendrite_type="all", need_structu
     return specimen_ids, first_ap, isi_shape, step_subthresh, subthresh_norm, spiking, inst_freq_norm, meta_df
 
 
-def load_organized_data(project, base_dir, params_file, dendrite_type, use_noise=False, need_structure=False, include_dend_type_null=True):
+def load_organized_data(project, base_dir, params_file, dendrite_type,
+                        use_noise=False, need_structure=False,
+                        include_dend_type_null=True,
+                        limit_to_cortical_layers=None):
     logging.info("in load_and_organize_data")
     (specimen_ids,
      first_ap,
@@ -232,7 +241,8 @@ def load_organized_data(project, base_dir, params_file, dendrite_type, use_noise
                           use_noise=use_noise,
                           dendrite_type=dendrite_type,
                           need_structure=need_structure,
-                          include_dend_type_null=include_dend_type_null)
+                          include_dend_type_null=include_dend_type_null,
+                          limit_to_cortical_layers=limit_to_cortical_layers)
 
     data_for_spca = [
         {"data": first_ap,
@@ -283,7 +293,7 @@ def define_spca_parameters(filename="/allen/programs/celltypes/workgroups/ivscc/
             indices = np.arange(d["range"][0], d["range"][1])
         else:
             range_list = []
-            for a, b in zip(d["range"][:-1], d["range"][1:]):
+            for a, b in zip(d["range"][:-1:2], d["range"][1::2]):
                 range_list.append(np.arange(a, b))
             indices = np.hstack(range_list)
         spca_zht_params[k] = (
@@ -292,6 +302,11 @@ def define_spca_parameters(filename="/allen/programs/celltypes/workgroups/ivscc/
             d["use_corr"],
             indices,
         )
+
+    if "step_num" in json_data["inst_freq_norm"]:
+        step_num = json_data["inst_freq_norm"]["step_num"]
+    else:
+        step_num = 50 # default value
 
 #     spca_zht_params["first_ap_v"] = (7, [400, 350, 400, 350, 350, 375, 350], False, np.arange(0, 450))
 #     spca_zht_params["first_ap_dv"] = (9, [225, 175, 225, 250, 150, 150, 150, 130, 130], False, np.arange(450, 900 - 3))
@@ -307,7 +322,7 @@ def define_spca_parameters(filename="/allen/programs/celltypes/workgroups/ivscc/
 #     spca_zht_params["spiking_width"] = (3, [300, 200, 225], False, np.arange(120 + 8 * 300, 120 + 9 * 300))
 #     spca_zht_params["inst_freq_norm"] = (8, [300, 250, 225, 250, 200, 100, 225, 225], False, np.arange(300))
 
-    return spca_zht_params
+    return spca_zht_params, step_num
 
 
 def load_data_with_ids(id_list, project="T301", use_noise=False, dendrite_type="all"):

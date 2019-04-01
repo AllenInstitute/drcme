@@ -21,7 +21,7 @@ def main(orig_transform_file, orig_data_dir, orig_project,
          new_data_dir, new_project,
          params_file, dendrite_type,
          output_file, **kwargs):
-    spca_zht_params = ld.define_spca_parameters(params_file)
+    spca_zht_params, _ = ld.define_spca_parameters(params_file)
 
     spca_results = joblib.load(orig_transform_file)
 
