@@ -1,9 +1,17 @@
 #!/usr/bin/python
 
+# This file is a Python port of the sparse PCA algorithm of the
+# R elasticnet package (https://cran.r-project.org/web/packages/elasticnet/index.html)
+
 import numpy as np
 import scipy
 import scipy.linalg as sl
+
+# The lars_fort module needs to be created by running f2py on the delcol.f
+# Fortran file from the R package lars (https://github.com/cran/lars), creating
+# a lars_fort.so file
 import lars_fort
+
 import logging
 
 
