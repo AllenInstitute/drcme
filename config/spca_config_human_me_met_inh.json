@@ -11,7 +11,7 @@
 	    "allow_missing_structure": false,
 	    "allow_missing_dendrite": false
 	  },
-	  	  {
+      {
 	    "project": "curated_hMET_inh",
 	    "data_dir": "/allen/programs/celltypes/workgroups/ivscc/nathang/fv_output",
 	    "dendrite_type": "all",

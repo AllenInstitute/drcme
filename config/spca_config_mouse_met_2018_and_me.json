@@ -4,7 +4,7 @@
 	"output_code": "mMET_2018_and_mME",
 	"use_noise": false,
 	"datasets": [
-    {
+      {
 	    "project": "mMET_2018",
 	    "data_dir": "/allen/programs/celltypes/workgroups/ivscc/nathang/fv_output",
 	    "dendrite_type": "all",
