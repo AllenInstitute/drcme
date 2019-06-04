@@ -1,3 +1,5 @@
+from builtins import zip
+from builtins import range
 import numpy as np
 import pandas as pd
 from pandas import DataFrame, Series
@@ -343,7 +345,6 @@ def load_data_with_ids(id_list, project="T301", use_noise=False, dendrite_type="
     isi_shape = isi_shape[inclusion_mask, :]
     meta_df = meta_df.loc[inclusion_mask, :]
     inst_freq_norm = inst_freq_norm[inclusion_mask, :]
-    print len(specimen_ids)
 
     return specimen_ids, first_ap, isi_shape, step_subthresh, subthresh_norm, spiking, inst_freq_norm, meta_df
 

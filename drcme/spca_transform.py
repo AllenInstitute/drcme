@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+from __future__ import print_function
 import numpy as np
 import pandas as pd
 
@@ -14,7 +15,7 @@ def orig_mean_and_std_for_zscore(spca_results, orig_data, spca_zht_params, pev_t
             above_thresh = spca_results[k]["pev"] >= pev_threshold
             Z = d.dot(spca_results[k]["loadings"][:, above_thresh])
             if np.any(np.isnan(Z)):
-                print "NaNs found", k
+                print("NaNs found", k)
             Z_list.append(Z)
 
     combo_orig = np.hstack(Z_list)
@@ -32,7 +33,7 @@ def spca_transform_new_data(spca_results, new_data, spca_zht_params, orig_mean, 
             above_thresh = spca_results[k]["pev"] >= pev_threshold
             Z = d.dot(spca_results[k]["loadings"][:, above_thresh])
             if np.any(np.isnan(Z)):
-                print "NaNs found", k
+                print("NaNs found", k)
             Z_list.append(Z)
 
     combo_new = np.hstack(Z_list)

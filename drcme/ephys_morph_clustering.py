@@ -1,3 +1,5 @@
+from builtins import map
+from builtins import range
 import numpy as np
 import pandas as pd
 
@@ -119,8 +121,8 @@ def spectral_combo_cluster_calls(results_df, morph_X, ephys_spca,
 def consensus_clusters(results, min_clust_size = 3):
     n_cells = results.shape[0]
     shared = np.zeros((n_cells, n_cells))
-    for i in xrange(shared.shape[0]):
-        for j in xrange(i, shared.shape[0]):
+    for i in range(shared.shape[0]):
+        for j in range(i, shared.shape[0]):
             shared_count = np.sum(results[i, :] == results[j, :])
             shared[i, j] = shared_count
             shared[j, i] = shared_count
@@ -200,7 +202,7 @@ def refine_assignments(clust_labels, shared_norm):
         last_reassignments = reassignments
         reassignments = []
         # Check within and against
-        for i in xrange(shared_norm.shape[0]):
+        for i in range(shared_norm.shape[0]):
             self_mask = np.ones(shared_norm.shape[0]).astype(bool)
             self_mask[i] = False
             cell_rates = []
@@ -261,7 +263,7 @@ def subsample_run(original_labels, specimen_ids, morph_X, ephys_spca,
         "n_cl": n_cl,
         "n_nn": n_nn,
         "n_folds": n_folds,
-    } for i in xrange(n_iter)]
+    } for i in range(n_iter)]
 
 
 #     results = map(individual_subsample_run, run_info_list)

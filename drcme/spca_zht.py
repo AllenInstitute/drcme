@@ -3,6 +3,8 @@
 # This file is a Python port of the sparse PCA algorithm of the
 # R elasticnet package (https://cran.r-project.org/web/packages/elasticnet/index.html)
 
+from __future__ import absolute_import
+from builtins import range
 import numpy as np
 import scipy
 import scipy.linalg as sl
@@ -10,7 +12,7 @@ import scipy.linalg as sl
 # The lars_fort module needs to be created by running f2py on the delcol.f
 # Fortran file from the R package lars (https://github.com/cran/lars), creating
 # a lars_fort.so file
-import lars_fort
+from . import lars_fort
 
 import logging
 
@@ -130,7 +132,7 @@ def _solvebeta(x, y, paras, max_steps=None, sparse=None, eps=2.22e-16):
         first_in = np.zeros(m, dtype=int)
         active = np.array([], dtype=int)
         ignores = np.array([], dtype=int)
-        actions = range(max_steps)
+        actions = list(range(max_steps))
         drops = False
         Sign = np.array([])
         R = None

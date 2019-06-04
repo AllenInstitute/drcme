@@ -1,3 +1,4 @@
+from builtins import str
 import numpy as np
 from . import spca_zht as szht
 from . import load_data as ld

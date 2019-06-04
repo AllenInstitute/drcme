@@ -1,5 +1,8 @@
 #!/usr/bin/env python
 
+from __future__ import print_function
+from builtins import zip
+from builtins import range
 import numpy as np
 import pandas as pd
 from pandas import DataFrame, Series
@@ -107,7 +110,7 @@ def entropy_combi(tau, labels, K_bic, piecewise_components=2):
     Ks = [K_bic]
     n_merge_tracker = [0]
     if K_bic <= 3:
-        print "Too few clusters to assess merging"
+        print("Too few clusters to assess merging")
         merge_info = {
             "entropies": entropies,
             "cumul_merges": None,
@@ -259,9 +262,9 @@ def main():
     sub_dirs = [s.format(project) for s in ["all_{:s}", "exc_{:s}", "inh_{:s}"]]
     piecewise_components = [2, 2, 3]
     for sub_dir, gmm_type, pw_comp in zip(sub_dirs, gmm_types, piecewise_components):
-        print "merging for ", sub_dir, "with", gmm_type
+        print("merging for ", sub_dir, "with", gmm_type)
         merge_info, new_labels, tau_merged, _ = entropy_merges(sub_dir, project, gmm_type=gmm_type, piecewise_components=pw_comp)
-        print merge_info
+        print(merge_info)
         data = pd.read_csv(os.path.join(sub_dir, "sparse_pca_components_{:s}.csv".format(project)), index_col=0)
         new_labels, tau_merged, _, _ = order_new_labels(new_labels, tau_merged, data)
 

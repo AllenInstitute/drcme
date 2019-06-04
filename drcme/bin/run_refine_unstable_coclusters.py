@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+from __future__ import print_function
 import numpy as np
 import pandas as pd
 import argschema as ags
@@ -74,7 +75,7 @@ def main(cocluster_matrix_file, jaccards_file, cluster_labels_file, ordering_fil
     shared = np.loadtxt(cocluster_matrix_file)
     jaccards = np.loadtxt(jaccards_file)
     clust_labels_df = pd.read_csv(cluster_labels_file, index_col=0)
-    print clust_labels_df.head()
+    print(clust_labels_df.head())
     clust_labels = clust_labels_df["0"].values
     new_order = np.loadtxt(ordering_file).astype(int)
 
@@ -93,7 +94,7 @@ def main(cocluster_matrix_file, jaccards_file, cluster_labels_file, ordering_fil
         mr = match_rates_for_dissolved_clusters(unstable_clusters, intact_clusters,
                                                 refined_clust_labels, shared,
                                                 threshold=coclust_threshold)
-        if len(mr.keys()) == 0:
+        if len(list(mr.keys())) == 0:
             break
         cl_for_dissolve = max(mr, key=lambda key: mr[key])
         if mr[cl_for_dissolve] < pct_needed:
