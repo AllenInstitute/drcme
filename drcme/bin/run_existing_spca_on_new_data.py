@@ -1,3 +1,4 @@
+import np
 import pandas as pd
 import argschema as ags
 from sklearn.externals import joblib
