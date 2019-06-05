@@ -27,10 +27,11 @@ class SpcaTransformParameters(ags.ArgSchema):
         description="schema for loading one or more specific datasets for the analysis")
     params_file = ags.fields.InputFile(default="/allen/aibs/mat/nathang/single-cell-ephys/dev/default_spca_params.json")
     output_file = ags.fields.OutputFile(description="CSV with transformed values")
+    use_noise = ags.fields.Boolean(default=False)
 
 
 def main(orig_transform_file, orig_datasets, new_datasets, params_file,
-         output_file, **kwargs):
+         output_file, use_noise, **kwargs):
     spca_zht_params, _ = ld.define_spca_parameters(params_file)
 
     spca_results = joblib.load(orig_transform_file)
