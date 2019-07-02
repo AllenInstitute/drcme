@@ -8,11 +8,7 @@ from builtins import range
 import numpy as np
 import scipy
 import scipy.linalg as sl
-
-# The lars_fort module needs to be created by running f2py on the delcol.f
-# Fortran file from the R package lars (https://github.com/cran/lars), creating
-# a lars_fort.so file
-from . import lars_fort
+from .delcol import delcol
 
 import logging
 
@@ -273,5 +269,5 @@ def _delcol(r, z, k=None):
     r = r[:, mask]
     z = np.reshape(z, newshape=(-1, 1))
     dz = z.shape
-    lars_fort.delcol(r, int(k), z, int(p), int(dz[0]), int(dz[1]))
+    r, z = delcol(r, k, z)
     return r
