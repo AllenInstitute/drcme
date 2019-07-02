@@ -130,6 +130,60 @@ def load_data(project="T301", use_noise=False, dendrite_type="all", need_structu
     logging.info("Cells with Cre status indeterminate: {:d}".format(np.sum(meta_df["cre_w_status"] == "indeterminate")))
     logging.info("Cells with dendrite type NA: {:d}".format(np.sum(meta_df["dendrite_type"] == "NA")))
     logging.info("Cells with both indeterminate Cre status and dendrite type NA: {:d}".format(np.sum((meta_df["cre_w_status"] == "indeterminate") & (meta_df["dendrite_type"] == "NA"))))
+
+    inclusion_mask = filter_by_dendrite_and_structure(meta_df, need_structure,
+        dendrite_type, include_dend_type_null)
+
+    if limit_to_cortical_layers is not None:
+        inclusion_mask = inclusion_mask & meta_df["cortex_layer"].isin(limit_to_cortical_layers)
+        logging.info("Cells in restricted cortical layers: {:d}".format(int(np.sum(inclusion_mask))))
+
+    specimen_ids = specimen_ids[inclusion_mask]
+    step_subthresh = step_subthresh[inclusion_mask, :]
+    subthresh_norm = subthresh_norm[inclusion_mask, :]
+#     ramp_subthresh = ramp_subthresh[inclusion_mask, :]
+    first_ap = first_ap[inclusion_mask, :]
+    spiking = spiking[inclusion_mask, :]
+    isi_shape = isi_shape[inclusion_mask, :]
+    if use_noise:
+        noise = noise[inclusion_mask, :]
+    meta_df = meta_df.loc[inclusion_mask, :]
+
+
+    if restriction_file is not None:
+        # Load file of IDs that the cells must be in
+        restrict_ids = np.loadtxt(restriction_file)
+        inclusion_mask = np.array([s in restrict_ids for s in specimen_ids])
+
+        specimen_ids = specimen_ids[inclusion_mask]
+        step_subthresh = step_subthresh[inclusion_mask, :]
+        subthresh_norm = subthresh_norm[inclusion_mask, :]
+#         ramp_subthresh = ramp_subthresh[inclusion_mask, :]
+        first_ap = first_ap[inclusion_mask, :]
+        spiking = spiking[inclusion_mask, :]
+        isi_shape = isi_shape[inclusion_mask, :]
+        if use_noise:
+            noise = noise[inclusion_mask, :]
+        meta_df = meta_df.loc[inclusion_mask, :]
+
+    spca_zht_params, step_num = define_spca_parameters(filename=params_file)
+
+    if "spiking_inst_freq" in spca_zht_params and "inst_freq_norm" in spca_zht_params:
+        indices = spca_zht_params["spiking_inst_freq"][3]
+        logging.debug("calculating inst_freq_norm with step_num {:d}".format(step_num))
+        inst_freq_norm = spiking[:, indices]
+        n_steps = len(indices) // step_num
+        for i in range(n_steps):
+            row_max = inst_freq_norm[:, i * step_num:(i + 1) * step_num].max(axis=1)
+            row_max[row_max == 0] = 1.
+            inst_freq_norm[:, i * step_num:(i + 1) * step_num] = inst_freq_norm[:, i * step_num:(i + 1) * step_num] / row_max[:, None]
+    else:
+        inst_freq_norm = None
+
+    return specimen_ids, first_ap, isi_shape, step_subthresh, subthresh_norm, spiking, inst_freq_norm, meta_df
+
+
+def filter_by_dendrite_and_structure(meta_df, need_structure, dendrite_type, include_dend_type_null):
     # Refine the data set
     if need_structure:
         logging.info("Requiring structure and dendrite type; excluding dendrite type = NA")
@@ -179,50 +233,7 @@ def load_data(project="T301", use_noise=False, dendrite_type="all", need_structu
         logging.info("Excluding dendrite type = NA")
         logging.info("Cells with dendrite type specified or missing (does not include NA): {:d}".format(int(np.sum(inclusion_mask))))
 
-    if limit_to_cortical_layers is not None:
-        inclusion_mask = inclusion_mask & meta_df["cortex_layer"].isin(limit_to_cortical_layers)
-        logging.info("Cells in restricted cortical layers: {:d}".format(int(np.sum(inclusion_mask))))
-
-    specimen_ids = specimen_ids[inclusion_mask]
-    step_subthresh = step_subthresh[inclusion_mask, :]
-    subthresh_norm = subthresh_norm[inclusion_mask, :]
-#     ramp_subthresh = ramp_subthresh[inclusion_mask, :]
-    first_ap = first_ap[inclusion_mask, :]
-    spiking = spiking[inclusion_mask, :]
-    isi_shape = isi_shape[inclusion_mask, :]
-    if use_noise:
-        noise = noise[inclusion_mask, :]
-    meta_df = meta_df.loc[inclusion_mask, :]
-
-
-    if restriction_file is not None:
-        # Load file of IDs that the cells must be in
-        restrict_ids = np.loadtxt(restriction_file)
-        inclusion_mask = np.array([s in restrict_ids for s in specimen_ids])
-
-        specimen_ids = specimen_ids[inclusion_mask]
-        step_subthresh = step_subthresh[inclusion_mask, :]
-        subthresh_norm = subthresh_norm[inclusion_mask, :]
-#         ramp_subthresh = ramp_subthresh[inclusion_mask, :]
-        first_ap = first_ap[inclusion_mask, :]
-        spiking = spiking[inclusion_mask, :]
-        isi_shape = isi_shape[inclusion_mask, :]
-        if use_noise:
-            noise = noise[inclusion_mask, :]
-        meta_df = meta_df.loc[inclusion_mask, :]
-
-    spca_zht_params, step_num = define_spca_parameters(filename=params_file)
-
-    indices = spca_zht_params["spiking_inst_freq"][3]
-    logging.debug("calculating inst_freq_norm with step_num {:d}".format(step_num))
-    inst_freq_norm = spiking[:, indices]
-    n_steps = len(indices) / step_num
-    for i in range(n_steps):
-        row_max = inst_freq_norm[:, i * step_num:(i + 1) * step_num].max(axis=1)
-        row_max[row_max == 0] = 1.
-        inst_freq_norm[:, i * step_num:(i + 1) * step_num] = inst_freq_norm[:, i * step_num:(i + 1) * step_num] / row_max[:, None]
-
-    return specimen_ids, first_ap, isi_shape, step_subthresh, subthresh_norm, spiking, inst_freq_norm, meta_df
+    return inclusion_mask
 
 
 def load_organized_data(project, base_dir, params_file, dendrite_type,
@@ -274,10 +285,11 @@ def load_organized_data(project, base_dir, params_file, dendrite_type,
             },
         )
 
-    data_for_spca.append({
-        "data": inst_freq_norm,
-        "part_keys": ["inst_freq_norm"],
-    })
+    if inst_freq_norm is not None:
+        data_for_spca.append({
+            "data": inst_freq_norm,
+            "part_keys": ["inst_freq_norm"],
+        })
 
     return data_for_spca, specimen_ids
 
@@ -305,7 +317,8 @@ def define_spca_parameters(filename="/allen/programs/celltypes/workgroups/ivscc/
             indices,
         )
 
-    if "step_num" in json_data["inst_freq_norm"]:
+
+    if "inst_freq_norm" in json_data and "step_num" in json_data["inst_freq_norm"]:
         step_num = json_data["inst_freq_norm"]["step_num"]
     else:
         step_num = 50 # default value
