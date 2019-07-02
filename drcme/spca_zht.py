@@ -15,7 +15,7 @@ import logging
 
 def spca_zht(data, K, para, type="predictor", sparse="penalty", use_corr=False,
              lambda_val=1e-6, max_iter=200, trace=False, eps_conv=1e-3):
-    x = data.copy()
+    x = data.copy().astype(np.float64)
     if type == "predictor":
         n = x.shape[0]
         p = x.shape[1]
