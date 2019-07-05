@@ -5,6 +5,7 @@ import pandas as pd
 from pandas import DataFrame, Series
 import logging
 import json
+import h5py
 import os.path
 
 
@@ -184,6 +185,28 @@ def load_data(project="T301", use_noise=False, dendrite_type="all", need_structu
 
 
 def filter_by_dendrite_and_structure(meta_df, need_structure, dendrite_type, include_dend_type_null):
+    """Create mask for cells that pass metadata filters
+
+    Parameters
+    ----------
+    metadata_df: DataFrame
+        DataFrame of metadata
+    need_structure: bool (optional, default False)
+        Requires that structure is present (only used
+        if metadata file is supplied)
+    dendrite_type: str (optional, default 'all')
+        Dendrite type for filtering ('all', 'spiny', 'aspiny') (only used
+        if metadata file is supplied)
+    include_dend_type_null: bool (optional, default True)
+        Also include cells without a dendrite type available regardless of
+        what `dendrite_type` is specified (only used
+        if metadata file is supplied)
+
+    Results
+    -------
+    inclusion_mask: array of shape (len(specimen_ids), )
+        Boolean mask for filtered cells
+    """
     # Refine the data set
     if need_structure:
         logging.info("Requiring structure and dendrite type; excluding dendrite type = NA")
@@ -294,6 +317,166 @@ def load_organized_data(project, base_dir, params_file, dendrite_type,
     return data_for_spca, specimen_ids
 
 
+def load_h5_data(h5_fv_file, params_file, metadata_file=None, dendrite_type="all",
+        need_structure=False,
+        include_dend_type_null=True,
+        limit_to_cortical_layers=None):
+    """Load dictionary for sPCA processing from HDF5 file with specified
+       metadata filters
+
+    Parameters
+    ----------
+    h5_fv_file: str
+        Path to feature vector HDF5 file
+    params_file: str
+        Path to sPCA parameters JSON file
+    metadata_file: str (optional, default None)
+        Path to metadata CSV file
+    dendrite_type: str (optional, default 'all')
+        Dendrite type for filtering ('all', 'spiny', 'aspiny') (only used
+        if metadata file is supplied)
+    need_structure: bool (optional, default False)
+        Requires that structure is present (only used
+        if metadata file is supplied)
+    include_dend_type_null: bool (optional, default True)
+        Also include cells without a dendrite type available regardless of
+        what `dendrite_type` is specified (only used
+        if metadata file is supplied)
+    limit_to_cortical_layers: list (optional, default None)
+        List of cortical layers that metadata must match for inclusion (only used
+        if metadata file is supplied)
+
+    Results
+    -------
+    data_for_spca: dict
+        Dictionary of data sets for sPCA analysis
+    specimen_ids: array
+        The specimen IDs for the cells in the data sets
+    """
+
+    f = h5py.File(h5_fv_file)
+    spca_zht_params, step_num = define_spca_parameters(filename=params_file)
+
+    specimen_ids = f["ids"][...]
+    logging.info("Starting with {:d} cells".format(len(specimen_ids)))
+
+    # Identify cells with no ramp spike
+    first_ap_v = f["first_ap_v"][...]
+
+    # Expected to have three equal-length AP waveforms
+    n_bins = first_ap_v.shape[1] // 3
+
+    # Ramp waveform expected to be last
+    ramp_mask = ~np.all(first_ap_v[:, -n_bins:] == 0, axis=1)
+    logging.info("{} cells have no ramp AP".format(np.sum(ramp_mask == False)))
+
+    if metadata_file is not None:
+        metadata = pd.read_csv(metadata_file, index_col=0)
+        mask = mask_for_metadata(specimen_ids, metadata,
+            dendrite_type, need_structure,
+            include_dend_type_null, limit_to_cortical_layers)
+        mask = mask & ramp_mask
+    else:
+        mask = ramp_mask
+
+    data_for_spca = {}
+    for k in spca_zht_params:
+        if k not in f.keys():
+            logging.debug("{} not found in HDF5 file".format(k))
+            continue
+        data = f[k][mask, :]
+        data_for_spca[k] = data
+
+    # Calculate additional data set if requested
+    if ("inst_freq" in spca_zht_params and "inst_freq_norm" in spca_zht_params
+        and "inst_freq" in f.keys()):
+        logging.debug("inst_freq_norm will be calculated from spiking_inst_freq")
+        indices = spca_zht_params["spiking_inst_freq"][3]
+        logging.debug("calculating inst_freq_norm with step_num {:d}".format(step_num))
+        if indices is not None:
+            inst_freq_norm = f["spiking_inst_freq"][mask, indices]
+        else:
+            inst_freq_norm = f["spiking_inst_freq"][mask, :]
+        n_steps = len(indices) // step_num
+        for i in range(n_steps):
+            row_max = inst_freq_norm[:, i * step_num:(i + 1) * step_num].max(axis=1)
+            row_max[row_max == 0] = 1. # handle divide-by-zero issues
+            inst_freq_norm[:, i * step_num:(i + 1) * step_num] = inst_freq_norm[:, i * step_num:(i + 1) * step_num] / row_max[:, None]
+        data_for_spca["inst_freq_norm"] = inst_freq_norm
+
+    specimen_ids = specimen_ids[ramp_mask & mask]
+    logging.info("Loaded data for {} cells".format(len(specimen_ids)))
+    return data_for_spca, specimen_ids
+
+
+def mask_for_metadata(specimen_ids, metadata_df, dendrite_type="all",
+        need_structure=False, include_dend_type_null=True,
+        limit_to_cortical_layers=None):
+    """Create mask for cells that pass metadata filters
+
+    Parameters
+    ----------
+    specimen_ids: array
+        Specimen IDs for cells to filter
+    metadata_df: DataFrame
+        DataFrame of metadata
+    dendrite_type: str (optional, default 'all')
+        Dendrite type for filtering ('all', 'spiny', 'aspiny') (only used
+        if metadata file is supplied)
+    need_structure: bool (optional, default False)
+        Requires that structure is present (only used
+        if metadata file is supplied)
+    include_dend_type_null: bool (optional, default True)
+        Also include cells without a dendrite type available regardless of
+        what `dendrite_type` is specified (only used
+        if metadata file is supplied)
+    limit_to_cortical_layers: list (optional, default None)
+        List of cortical layers that metadata must match for inclusion (only used
+        if metadata file is supplied)
+
+    Results
+    -------
+    mask: array of shape (len(specimen_ids), )
+        Boolean mask for filtered cells
+    """
+
+    # Limit to specimen_ids
+    meta_df = metadata.set_index("specimen_id").loc[specimen_ids, :]
+
+    # Reformat metadata information
+    meta_df.loc[meta_df["cre_reporter_status"].isnull(), "cre_reporter_status"] = "none"
+    meta_df = merge_cre_lines(meta_df)
+    meta_df["cre_w_status"] = "unlabeled"
+    positive_ind = meta_df["cre_reporter_status"].str.endswith("positive")
+    if positive_ind.any():
+        meta_df.ix[positive_ind, "cre_w_status"] = meta_df.ix[positive_ind, "cre_line"]
+    indeterminate_ind = meta_df["cre_reporter_status"].str.endswith("indeterminate")
+    indeterminate_ind.fillna(False, inplace=True)
+    if indeterminate_ind.any():
+        meta_df.ix[indeterminate_ind, "cre_w_status"] = "indeterminate"
+
+    struct_layer = {"1": "1", "2/3": "2/3", "4": "4", "5": "5", "6a": "6", "6b": "6"}
+    meta_df["layer"] = "unk"
+    for sl in struct_layer:
+        meta_df.ix[[s.endswith(sl) if type(s) == str else False for s in meta_df["structure"]], "layer"] = struct_layer[sl]
+    meta_df["cre_layer"] = meta_df["cre_w_status"] + " " + meta_df["layer"]
+    meta_df["dendrite_type"] = [s.replace("dendrite type - ", "") if type(s) is str else np.nan for s in meta_df["dendrite_type"]]
+
+    logging.info("Cells with Cre status indeterminate: {:d}".format(np.sum(meta_df["cre_w_status"] == "indeterminate")))
+    logging.info("Cells with dendrite type NA: {:d}".format(np.sum(meta_df["dendrite_type"] == "NA")))
+    logging.info("Cells with both indeterminate Cre status and dendrite type NA: {:d}".format(np.sum((meta_df["cre_w_status"] == "indeterminate") & (meta_df["dendrite_type"] == "NA"))))
+
+
+    dend_struct_mask = filter_by_dendrite_and_structure(meta_df, need_structure,
+        dendrite_type, include_dend_type_null)
+
+    if limit_to_cortical_layers is not None:
+        layer_mask = meta_df["cortex_layer"].isin(limit_to_cortical_layers)
+        logging.info("Cells in restricted cortical layers: {:d}".format(int(np.sum(inclusion_mask))))
+
+    return dend_struct_mask & layer_mask
+
+
 def define_spca_parameters(filename="/allen/programs/celltypes/workgroups/ivscc/nathang/single-cell-ephys/dev/default_spca_params.json"):
     # Parameters found
     # (n_components, n nonzero component list, use_corr, data_range)
@@ -322,20 +505,6 @@ def define_spca_parameters(filename="/allen/programs/celltypes/workgroups/ivscc/
         step_num = json_data["inst_freq_norm"]["step_num"]
     else:
         step_num = 50 # default value
-
-#     spca_zht_params["first_ap_v"] = (7, [400, 350, 400, 350, 350, 375, 350], False, np.arange(0, 450))
-#     spca_zht_params["first_ap_dv"] = (9, [225, 175, 225, 250, 150, 150, 150, 130, 130], False, np.arange(450, 900 - 3))
-#     spca_zht_params["isi_shape"] = (4, [90, 70, 80, 80], False, np.arange(100))
-#     spca_zht_params["step_subthresh"] = (3, [700, 700, 550], False, np.arange(700))
-#     spca_zht_params["subthresh_norm"] = (7, [110, 90, 50, 30, 90, 80, 90], False, np.arange(140))
-#     spca_zht_params["spiking_rate"] = (6, [95, 80, 100, 70, 70, 70], False, np.arange(0, 120))
-#     spca_zht_params["spiking_inst_freq"] = (6, [300, 275, 225, 275, 250, 225], False, np.arange(120 + 0 * 300, 120 + 1 * 300))
-#     spca_zht_params["spiking_updown"] = (3, [300, 275, 250], False, np.arange(120 + 1 * 300, 120 + 2 * 300))
-#     spca_zht_params["spiking_peak_v"] = (3, [300, 275, 250], False, np.arange(120 + 2 * 300, 120 + 3 * 300))
-#     spca_zht_params["spiking_fast_trough_v"] = (3, [300, 275, 225], False, np.arange(120 + 3 * 300, 120 + 4 * 300))
-#     spca_zht_params["spiking_threshold_v"] = (5, [300, 275, 250, 225, 250], False, np.arange(120 + 7 * 300, 120 + 8 * 300))
-#     spca_zht_params["spiking_width"] = (3, [300, 200, 225], False, np.arange(120 + 8 * 300, 120 + 9 * 300))
-#     spca_zht_params["inst_freq_norm"] = (8, [300, 250, 225, 250, 200, 100, 225, 225], False, np.arange(300))
 
     return spca_zht_params, step_num
 
