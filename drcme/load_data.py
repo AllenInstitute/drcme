@@ -354,7 +354,7 @@ def load_h5_data(h5_fv_file, params_file, metadata_file=None, dendrite_type="all
         The specimen IDs for the cells in the data sets
     """
 
-    f = h5py.File(h5_fv_file)
+    f = h5py.File(h5_fv_file, "r")
     spca_zht_params, step_num = define_spca_parameters(filename=params_file)
 
     specimen_ids = f["ids"][...]
@@ -390,22 +390,26 @@ def load_h5_data(h5_fv_file, params_file, metadata_file=None, dendrite_type="all
     # Calculate additional data set if requested
     if ("inst_freq" in spca_zht_params and "inst_freq_norm" in spca_zht_params
         and "inst_freq" in f.keys()):
-        logging.debug("inst_freq_norm will be calculated from spiking_inst_freq")
-        indices = spca_zht_params["spiking_inst_freq"][3]
+        logging.debug("inst_freq_norm will be calculated from inst_freq")
+        indices = spca_zht_params["inst_freq"][3]
         logging.debug("calculating inst_freq_norm with step_num {:d}".format(step_num))
+        inst_freq_data = f["inst_freq"][...]
         if indices is not None:
-            inst_freq_norm = f["spiking_inst_freq"][mask, indices]
+            inst_freq_norm = inst_freq_data[mask, :][:, indices]
         else:
-            inst_freq_norm = f["spiking_inst_freq"][mask, :]
+            inst_freq_norm = inst_freq_data[mask, :]
         n_steps = len(indices) // step_num
         for i in range(n_steps):
             row_max = inst_freq_norm[:, i * step_num:(i + 1) * step_num].max(axis=1)
             row_max[row_max == 0] = 1. # handle divide-by-zero issues
             inst_freq_norm[:, i * step_num:(i + 1) * step_num] = inst_freq_norm[:, i * step_num:(i + 1) * step_num] / row_max[:, None]
         data_for_spca["inst_freq_norm"] = inst_freq_norm
+    f.close()
 
     specimen_ids = specimen_ids[ramp_mask & mask]
     logging.info("Loaded data for {} cells".format(len(specimen_ids)))
+
+
     return data_for_spca, specimen_ids
 
 
@@ -486,7 +490,10 @@ def define_spca_parameters(filename="/allen/programs/celltypes/workgroups/ivscc/
     spca_zht_params = {}
     for k in json_data:
         d = json_data[k]
-        if len(d["range"]) == 2:
+
+        if d["range"] is None:
+            indices = None
+        elif len(d["range"]) == 2:
             indices = np.arange(d["range"][0], d["range"][1])
         else:
             range_list = []
