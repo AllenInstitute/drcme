@@ -119,7 +119,7 @@ def _solvebeta(x, y, paras, max_steps=None, sparse=None, eps=2.22e-16):
     Cvec = y.dot(x) * d2
     ssy = (y ** 2).sum()
     residuals = np.hstack((y, np.zeros(m)))
-    if not max_steps:
+    if max_steps is None:
         max_steps = 50 * max_vars
     penalty = np.array([np.max(np.abs(Cvec))])
     dropid = None
@@ -131,7 +131,6 @@ def _solvebeta(x, y, paras, max_steps=None, sparse=None, eps=2.22e-16):
         first_in = np.zeros(m, dtype=np.int32)
         active = np.array([], dtype=np.int32)
         ignores = np.array([], dtype=np.int32)
-        actions = np.arange(max_steps, dtype=np.int32)
         drops = np.array([False])
         Sign = np.array([])
         R_data = None
@@ -151,11 +150,11 @@ def _solvebeta(x, y, paras, max_steps=None, sparse=None, eps=2.22e-16):
                 new_mask = (np.abs(C) >= Cmax)
                 C = C[~new_mask]
                 new = inactive[new_mask]
-                sign_list = []
-                ignores_list = []
-                active_list = []
-                action_list = []
                 for inew in new:
+                    sign_list = []
+                    ignores_list = []
+                    active_list = []
+                    action_list = []
                     if len(active) > 0:
                         xold = x[:, active]
                     else:
@@ -205,8 +204,8 @@ def _solvebeta(x, y, paras, max_steps=None, sparse=None, eps=2.22e-16):
                 Sign = Sign[~drops]
             if (sparse == "varnum") and (len(active) >= paras[1]):
                 break
-            actions[k] = action
             k += 1
+
     return beta
 
 @njit

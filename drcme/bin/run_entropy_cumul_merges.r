@@ -25,4 +25,5 @@ main <- function() {
 	write.csv(combi$classification[[merge_info$postmerge_clusters]], labels_file)
 }
 
+mclust.options(subset=4000)
 main()

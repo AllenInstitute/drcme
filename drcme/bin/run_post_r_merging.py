@@ -22,8 +22,8 @@ def main(tau_file, labels_file, merge_info_file, entropy_piecewise_components, *
 
     with open(os.path.join(merge_info_file), "w") as f:
         json.dump({
-            "gmm_components": K_bic,
-            "postmerge_clusters": K_bic - merge_info["cp"][0],
+            "gmm_components": int(K_bic),
+            "postmerge_clusters": int(K_bic - merge_info["cp"][0]),
         }, f, indent=4)
 
 

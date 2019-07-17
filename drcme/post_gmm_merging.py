@@ -8,7 +8,7 @@ import pandas as pd
 from pandas import DataFrame, Series
 import scipy
 import os.path
-from sklearn.externals import joblib
+import joblib
 from scipy.cluster import hierarchy
 import argschema as ags
 import logging
@@ -75,7 +75,7 @@ def entropy_specific_merges(tau, labels, K_bic, clusters_to_merge):
                     merger = (i, j)
                     n_merged = np.sum(labels == i) + np.sum(labels == j)
         prior_merges.append(merger)
-        merges_by_names.append([merge_col_names[i] for i in merger])
+        merges_by_names.append([merge_col_names[i].item() for i in merger])
         entropies.append(ent_current)
         Ks.append(K-1)
         n_merge_tracker.append(n_merged)
