@@ -4,6 +4,9 @@ library(rjson)
 
 gmm_combi_clust_CBI <- function (data, G, H) {
 	n <- nrow(data)
+	print(c("G ", G))
+	print(c("H ", H))
+
 	gmm_fit <- Mclust(data, G=1:G, modelNames="VVI", verbose=TRUE)
 #	if (is.null(gmm_fit)) {
 #		gmm_fit <- Mclust(data, G=G, modelNames=c("EEI", "EVI", "VEI", "VVI"), verbose=TRUE)var(data)/G^(2/d)
@@ -14,8 +17,8 @@ gmm_combi_clust_CBI <- function (data, G, H) {
 	if (gmm_fit$G < H) {
 		nc <- gmm_fit$G
 	}
-	print(n)
-	print(nc)
+	print(c("n samples", n))
+	print(c("selected clusters ", nc))
 	clusterlist <- list()
 	for (i in 1:nc) {
 		clusterlist[[i]] <- (combi$classification[[nc]] == i)
@@ -70,4 +73,5 @@ main <- function() {
 
 }
 
+mclust.options(subset=4000)
 main()
