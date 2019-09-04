@@ -320,7 +320,8 @@ def load_organized_data(project, base_dir, params_file, dendrite_type,
 def load_h5_data(h5_fv_file, params_file, metadata_file=None, dendrite_type="all",
         need_structure=False,
         include_dend_type_null=True,
-        limit_to_cortical_layers=None):
+        limit_to_cortical_layers=None,
+        id_file=None):
     """Load dictionary for sPCA processing from HDF5 file with specified
        metadata filters
 
@@ -345,6 +346,8 @@ def load_h5_data(h5_fv_file, params_file, metadata_file=None, dendrite_type="all
     limit_to_cortical_layers: list (optional, default None)
         List of cortical layers that metadata must match for inclusion (only used
         if metadata file is supplied)
+    id_file: str (optional, default None)
+        Path to text file with IDs to use
 
     Results
     -------
@@ -371,6 +374,7 @@ def load_h5_data(h5_fv_file, params_file, metadata_file=None, dendrite_type="all
     logging.info("{} cells have no ramp AP".format(np.sum(ramp_mask == False)))
 
     if metadata_file is not None:
+        logging.debug("Using metadata file {}".format(metadata_file))
         metadata = pd.read_csv(metadata_file, index_col=0)
         mask = mask_for_metadata(specimen_ids, metadata,
             dendrite_type, need_structure,
@@ -378,6 +382,12 @@ def load_h5_data(h5_fv_file, params_file, metadata_file=None, dendrite_type="all
         mask = mask & ramp_mask
     else:
         mask = ramp_mask
+
+    if id_file is not None:
+        with open(id_file, "r") as id_f:
+            include_id_list = [int(line.strip("\n")) for line in id_f]
+        id_mask = np.array([spec_id in include_id_list for spec_id in specimen_ids])
+        mask = mask & id_mask
 
     data_for_spca = {}
     for k in spca_zht_params:
@@ -445,7 +455,7 @@ def mask_for_metadata(specimen_ids, metadata_df, dendrite_type="all",
     """
 
     # Limit to specimen_ids
-    meta_df = metadata.set_index("specimen_id").loc[specimen_ids, :]
+    meta_df = metadata_df.set_index("specimen_id").loc[specimen_ids, :]
 
     # Reformat metadata information
     meta_df.loc[meta_df["cre_reporter_status"].isnull(), "cre_reporter_status"] = "none"
@@ -477,7 +487,8 @@ def mask_for_metadata(specimen_ids, metadata_df, dendrite_type="all",
     if limit_to_cortical_layers is not None:
         layer_mask = meta_df["cortex_layer"].isin(limit_to_cortical_layers)
         logging.info("Cells in restricted cortical layers: {:d}".format(int(np.sum(inclusion_mask))))
-
+    else:
+        layer_mask = np.ones_like(dend_struct_mask, dtype=bool)
     return dend_struct_mask & layer_mask
 
 
