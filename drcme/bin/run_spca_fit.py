@@ -16,6 +16,8 @@ class DatasetParameters(ags.schemas.DefaultSchema):
     allow_missing_structure = ags.fields.Boolean(required=False, default=False)
     allow_missing_dendrite = ags.fields.Boolean(required=False, default=False)
     limit_to_cortical_layers = ags.fields.List(ags.fields.String, default=[], cli_as_single_argument=True)
+    id_file = ags.fields.InputFile(description="Text file with IDs to use",
+        required=False, allow_none=True, default=None)
 
 
 class AnalysisParameters(ags.ArgSchema):
@@ -45,6 +47,7 @@ def main(params_file, output_dir, output_code, datasets, **kwargs):
                                             need_structure=not ds["allow_missing_structure"],
                                             include_dend_type_null=ds["allow_missing_dendrite"],
                                             limit_to_cortical_layers=limit_to_cortical_layers,
+                                            id_file=ds["id_file"],
                                             params_file=params_file)
         data_objects.append(data_for_spca)
         specimen_ids_list.append(specimen_ids)
