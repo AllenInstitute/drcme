@@ -2,4 +2,5 @@ numpy>=1.12.1
 pandas>=0.17.0
 scipy>=0.15.1
 scikit-learn>=0.19.0
-argschema
+argschema<2.0
+marshmallow<3.0
