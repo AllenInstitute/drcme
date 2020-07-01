@@ -116,15 +116,15 @@ def load_data(project="T301", use_noise=False, dendrite_type="all", need_structu
     meta_df["cre_w_status"] = "unlabeled"
     positive_ind = meta_df["cre_reporter_status"].str.endswith("positive")
     if positive_ind.any():
-        meta_df.ix[positive_ind, "cre_w_status"] = meta_df.ix[positive_ind, "cre_line"]
+        meta_df.loc[positive_ind, "cre_w_status"] = meta_df.loc[positive_ind, "cre_line"]
     indeterminate_ind = meta_df["cre_reporter_status"].str.endswith("indeterminate")
     indeterminate_ind.fillna(False, inplace=True)
     if indeterminate_ind.any():
-        meta_df.ix[indeterminate_ind, "cre_w_status"] = "indeterminate"
+        meta_df.loc[indeterminate_ind, "cre_w_status"] = "indeterminate"
     struct_layer = {"1": "1", "2/3": "2/3", "4": "4", "5": "5", "6a": "6", "6b": "6"}
     meta_df["layer"] = "unk"
     for sl in struct_layer:
-        meta_df.ix[[s.endswith(sl) if type(s) == str else False for s in meta_df["structure"]], "layer"] = struct_layer[sl]
+        meta_df.loc[[s.endswith(sl) if type(s) == str else False for s in meta_df["structure"]], "layer"] = struct_layer[sl]
     meta_df["cre_layer"] = meta_df["cre_w_status"] + " " + meta_df["layer"]
     meta_df["dendrite_type"] = [s.replace("dendrite type - ", "") if type(s) is str else np.nan for s in meta_df["dendrite_type"]]
 
@@ -469,16 +469,16 @@ def mask_for_metadata(specimen_ids, metadata_df, dendrite_type="all",
     meta_df["cre_w_status"] = "unlabeled"
     positive_ind = meta_df["cre_reporter_status"].str.endswith("positive")
     if positive_ind.any():
-        meta_df.ix[positive_ind, "cre_w_status"] = meta_df.ix[positive_ind, "cre_line"]
+        meta_df.loc[positive_ind, "cre_w_status"] = meta_df.loc[positive_ind, "cre_line"]
     indeterminate_ind = meta_df["cre_reporter_status"].str.endswith("indeterminate")
     indeterminate_ind.fillna(False, inplace=True)
     if indeterminate_ind.any():
-        meta_df.ix[indeterminate_ind, "cre_w_status"] = "indeterminate"
+        meta_df.loc[indeterminate_ind, "cre_w_status"] = "indeterminate"
 
     struct_layer = {"1": "1", "2/3": "2/3", "4": "4", "5": "5", "6a": "6", "6b": "6"}
     meta_df["layer"] = "unk"
     for sl in struct_layer:
-        meta_df.ix[[s.endswith(sl) if type(s) == str else False for s in meta_df["structure"]], "layer"] = struct_layer[sl]
+        meta_df.loc[[s.endswith(sl) if type(s) == str else False for s in meta_df["structure"]], "layer"] = struct_layer[sl]
     meta_df["cre_layer"] = meta_df["cre_w_status"] + " " + meta_df["layer"]
     meta_df["dendrite_type"] = [s.replace("dendrite type - ", "") if type(s) is str else np.nan for s in meta_df["dendrite_type"]]
 
