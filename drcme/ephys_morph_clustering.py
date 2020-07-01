@@ -30,7 +30,6 @@ def clustjaccard(y_true, y_pred):
 
 def all_cluster_calls(specimen_ids, morph_X, ephys_spca,
                       weights=[1, 2, 5], n_cl=[10, 15, 20, 25], n_nn=[4, 7, 10]):
-    logging.info("Ephys weights: " + ", ".join(map(str, weights)))
     results_df = pd.DataFrame({"specimen_id": specimen_ids}).set_index("specimen_id")
 
     results_df = hc_nn_cluster_calls(results_df, morph_X, ephys_spca,
@@ -81,7 +80,7 @@ def hc_nn_cluster_calls(results_df, morph_X, ephys_spca,
 def hc_combo_cluster_calls(results_df, morph_X, ephys_spca,
                         weights=[1, 2, 5], n_cl=[10, 15, 20, 25]):
     for wt in weights:
-        EM_data = np.hstack([morph_X, wt * ephys_spca.values])
+        EM_data = np.hstack([morph_X, wt * ephys_spca])
         for cl in n_cl:
             key = "hc_combo_{:g}_{:d}".format(wt, cl)
             model = cluster.AgglomerativeClustering(linkage="ward",
@@ -95,12 +94,11 @@ def hc_combo_cluster_calls(results_df, morph_X, ephys_spca,
 def gmm_combo_cluster_calls(results_df, morph_X, ephys_spca,
                         weights=[1, 2, 5], n_cl=[10, 15, 20, 25]):
     for wt in weights:
-        EM_data = np.hstack([morph_X, wt * ephys_spca.values])
+        EM_data = np.hstack([morph_X, wt * ephys_spca])
         for cl in n_cl:
             key = "gmm_combo_{:g}_{:d}".format(wt, cl)
             model = mixture.GaussianMixture(n_components=cl, covariance_type="diag", n_init=20, random_state=0)
-            model.fit(EM_data)
-            results_df[key] = model.predict(EM_data)
+            results_df[key] = model.fit_predict(EM_data)
 
     return results_df
 
@@ -108,7 +106,7 @@ def gmm_combo_cluster_calls(results_df, morph_X, ephys_spca,
 def spectral_combo_cluster_calls(results_df, morph_X, ephys_spca,
                         weights=[1, 2, 5], n_cl=[10, 15, 20, 25]):
     for wt in weights:
-        EM_data = np.hstack([morph_X, wt * ephys_spca.values])
+        EM_data = np.hstack([morph_X, wt * ephys_spca])
         for cl in n_cl:
             key = "spec_combo_{:g}_{:d}".format(wt, cl)
             model = cluster.bicluster.SpectralBiclustering(cl, method="scale", n_init=20, random_state=0)
@@ -135,7 +133,6 @@ def consensus_clusters(results, min_clust_size = 3):
     while keep_going:
         uniq_labels = np.unique(clust_labels)
         new_labels = np.zeros_like(clust_labels)
-#         print "new round"
         for l in uniq_labels:
     #         print "old cluster", l
             cl_mask = clust_labels == l
@@ -143,7 +140,7 @@ def consensus_clusters(results, min_clust_size = 3):
             Z = hierarchy.linkage(X, method="ward")
             sub_labels = hierarchy.fcluster(Z, t=2, criterion="maxclust")
             if (np.sum(sub_labels == 1) < min_clust_size) or (np.sum(sub_labels == 2) < min_clust_size):
-                # Don't split if it produces singletons
+                # Don't split if it produces clusters that are too small
                 sub_labels = 2 * clust_labels[cl_mask]
             else:
                 sub_labels += (2 * int(l)) - 1
@@ -156,11 +153,14 @@ def consensus_clusters(results, min_clust_size = 3):
             keep_going = False
         clust_labels = new_labels
 
+    logging.debug(f"{len(np.unique(clust_labels))} after iterative splitting")
+
     keep_going = True
     while keep_going:
         # Check within and against
-        cc_rates = coclust_rates(shared_norm, clust_labels)
         uniq_labels = np.unique(clust_labels)
+        logging.debug(f"examining merges for {len(uniq_labels)} labels")
+        cc_rates = coclust_rates(shared_norm, clust_labels, uniq_labels)
         merges = []
         for i, l in enumerate(uniq_labels):
             for j, m in enumerate(uniq_labels[i + 1:]):
