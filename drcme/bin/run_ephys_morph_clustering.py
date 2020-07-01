@@ -14,6 +14,10 @@ class MeClusteringParameters(ags.ArgSchema):
     weights = ags.fields.List(ags.fields.Float,
                               cli_as_single_argument=True,
                               default=[1., 2., 4.])
+    n_cl = ags.fields.List(ags.fields.Integer,
+        cli_as_single_argument=True,
+        default=[10, 15, 20, 25])
+    min_consensus_n = ags.fields.Integer(default=3)
     cocluster_matrix_file = ags.fields.OutputFile()
     cluster_labels_file = ags.fields.OutputFile()
     specimen_id_file = ags.fields.OutputFile()
@@ -22,7 +26,7 @@ class MeClusteringParameters(ags.ArgSchema):
 
 
 def main(ephys_file, morph_file,
-         weights, cocluster_matrix_file,
+         weights, n_cl, min_consensus_n, cocluster_matrix_file,
          cluster_labels_file, jaccards_file, ordering_file,
          specimen_id_file,
          **kwargs):
@@ -33,33 +37,41 @@ def main(ephys_file, morph_file,
     morph_data = pd.read_csv(morph_file, index_col=0)
     morph_ids = morph_data.index.values
 
-    # Get ephys data for cells with morphologies
-    ids_with_morph_for_ephys = [s for s in morph_ids if s in ephys_data.index.tolist()]
-    ephys_for_morph = ephys_data.loc[ids_with_morph_for_ephys, :]
+    # Use cells with both types of data
+    ephys_morph_ids = ephys_data.index.intersection(morph_data.index)
 
-    # Only use morphs that have ephys
-    mask = [s in ephys_data.index.tolist() for s in morph_ids]
-    morph_data_ephys = morph_data.loc[mask, :]
+    logging.info(f"Using {len(ephys_morph_ids)} cells")
 
     logging.info("Calculating cluster calls")
-    results_df = emc.all_cluster_calls(morph_data_ephys.index.values,
-                                       morph_data_ephys.values,
-                                       ephys_for_morph,
-                                       weights=weights)
-    clust_labels, shared, cc_rates = emc.consensus_clusters(results_df.values[:, 1:])
+    logging.info("Ephys weights: " + ", ".join(map(str, weights)))
+    logging.info("Cluster numbers: " + ", ".join(map(str, n_cl)))
+
+    results_df = emc.all_cluster_calls(ephys_morph_ids.values,
+                                       morph_data.loc[ephys_morph_ids, :].values,
+                                       ephys_data.loc[ephys_morph_ids, :].values,
+                                       weights=weights,
+                                       n_cl=n_cl)
+    clust_labels, shared, cc_rates = emc.consensus_clusters(
+        results_df.values[:, 1:], min_clust_size=min_consensus_n)
     new_order = emc.sort_order(clust_labels)
+
+    logging.info(f"Identified {len(np.unique(clust_labels))} consensus clusters with full data set")
+
     np.savetxt(cocluster_matrix_file, shared)
-    pd.DataFrame(clust_labels, index=morph_data_ephys.index.values).to_csv(cluster_labels_file)
+    pd.DataFrame(clust_labels, index=ephys_morph_ids.values).to_csv(cluster_labels_file)
     np.savetxt(ordering_file, new_order, fmt="%d")
-    np.savetxt(specimen_id_file, morph_data_ephys.index.values, fmt="%d")
+    np.savetxt(specimen_id_file, ephys_morph_ids.values, fmt="%d")
 
     logging.info("Evaluating cluster stability")
     jaccards = emc.subsample_run(clust_labels,
-                                 morph_data_ephys.index.values,
-                                 morph_data_ephys.values,
-                                 ephys_for_morph,
+                                 ephys_morph_ids.values,
+                                 morph_data.loc[ephys_morph_ids, :].values,
+                                 ephys_data.loc[ephys_morph_ids, :].values,
                                  weights=weights,
-                                 n_folds=10, n_iter=10)
+                                 n_cl=n_cl,
+                                 n_folds=10,
+                                 n_iter=10,
+                                 min_consensus_n=min_consensus_n)
     np.savetxt(jaccards_file, jaccards)
 
     logging.info("Done")

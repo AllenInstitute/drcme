@@ -66,7 +66,7 @@ def select_data_subset(data_for_spca, spca_params):
     return subset_for_spca
 
 
-def spca_on_all_data(data_for_spca, spca_params, max_iter=200, eps_conv=1.5e-3):
+def spca_on_all_data(data_for_spca, spca_params, max_iter=500, eps_conv=1.5e-3):
     """Compute sPCA for data with specified parameters
 
     Parameters

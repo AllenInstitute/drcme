@@ -116,15 +116,15 @@ def load_data(project="T301", use_noise=False, dendrite_type="all", need_structu
     meta_df["cre_w_status"] = "unlabeled"
     positive_ind = meta_df["cre_reporter_status"].str.endswith("positive")
     if positive_ind.any():
-        meta_df.ix[positive_ind, "cre_w_status"] = meta_df.ix[positive_ind, "cre_line"]
+        meta_df.loc[positive_ind, "cre_w_status"] = meta_df.loc[positive_ind, "cre_line"]
     indeterminate_ind = meta_df["cre_reporter_status"].str.endswith("indeterminate")
     indeterminate_ind.fillna(False, inplace=True)
     if indeterminate_ind.any():
-        meta_df.ix[indeterminate_ind, "cre_w_status"] = "indeterminate"
+        meta_df.loc[indeterminate_ind, "cre_w_status"] = "indeterminate"
     struct_layer = {"1": "1", "2/3": "2/3", "4": "4", "5": "5", "6a": "6", "6b": "6"}
     meta_df["layer"] = "unk"
     for sl in struct_layer:
-        meta_df.ix[[s.endswith(sl) if type(s) == str else False for s in meta_df["structure"]], "layer"] = struct_layer[sl]
+        meta_df.loc[[s.endswith(sl) if type(s) == str else False for s in meta_df["structure"]], "layer"] = struct_layer[sl]
     meta_df["cre_layer"] = meta_df["cre_w_status"] + " " + meta_df["layer"]
     meta_df["dendrite_type"] = [s.replace("dendrite type - ", "") if type(s) is str else np.nan for s in meta_df["dendrite_type"]]
 
@@ -319,6 +319,7 @@ def load_organized_data(project, base_dir, params_file, dendrite_type,
 
 def load_h5_data(h5_fv_file, params_file, metadata_file=None, dendrite_type="all",
         need_structure=False,
+        need_ramp_spike=True,
         include_dend_type_null=True,
         limit_to_cortical_layers=None,
         id_file=None):
@@ -339,6 +340,8 @@ def load_h5_data(h5_fv_file, params_file, metadata_file=None, dendrite_type="all
     need_structure: bool (optional, default False)
         Requires that structure is present (only used
         if metadata file is supplied)
+    need_ramp_spike: bool (optional, default True)
+        Requires that the ramp spike is non-zero (aka not missing)
     include_dend_type_null: bool (optional, default True)
         Also include cells without a dendrite type available regardless of
         what `dendrite_type` is specified (only used
@@ -363,15 +366,18 @@ def load_h5_data(h5_fv_file, params_file, metadata_file=None, dendrite_type="all
     specimen_ids = f["ids"][...]
     logging.info("Starting with {:d} cells".format(len(specimen_ids)))
 
-    # Identify cells with no ramp spike
-    first_ap_v = f["first_ap_v"][...]
+    if need_ramp_spike:
+        # Ramp waveform expected to be last
+        # Identify cells with no ramp spike
+        first_ap_v = f["first_ap_v"][...]
 
-    # Expected to have three equal-length AP waveforms
-    n_bins = first_ap_v.shape[1] // 3
-
-    # Ramp waveform expected to be last
-    ramp_mask = ~np.all(first_ap_v[:, -n_bins:] == 0, axis=1)
-    logging.info("{} cells have no ramp AP".format(np.sum(ramp_mask == False)))
+        # Expected to have three equal-length AP waveforms
+        n_bins = first_ap_v.shape[1] // 3
+        ramp_mask = ~np.all(first_ap_v[:, -n_bins:] == 0, axis=1)
+        logging.info("{} cells have no ramp AP".format(np.sum(ramp_mask == False)))
+    else:
+        logging.info("Including cells without ramp AP")
+        ramp_mask = np.ones_like(specimen_ids).astype(bool)
 
     if metadata_file is not None:
         logging.debug("Using metadata file {}".format(metadata_file))
@@ -463,16 +469,16 @@ def mask_for_metadata(specimen_ids, metadata_df, dendrite_type="all",
     meta_df["cre_w_status"] = "unlabeled"
     positive_ind = meta_df["cre_reporter_status"].str.endswith("positive")
     if positive_ind.any():
-        meta_df.ix[positive_ind, "cre_w_status"] = meta_df.ix[positive_ind, "cre_line"]
+        meta_df.loc[positive_ind, "cre_w_status"] = meta_df.loc[positive_ind, "cre_line"]
     indeterminate_ind = meta_df["cre_reporter_status"].str.endswith("indeterminate")
     indeterminate_ind.fillna(False, inplace=True)
     if indeterminate_ind.any():
-        meta_df.ix[indeterminate_ind, "cre_w_status"] = "indeterminate"
+        meta_df.loc[indeterminate_ind, "cre_w_status"] = "indeterminate"
 
     struct_layer = {"1": "1", "2/3": "2/3", "4": "4", "5": "5", "6a": "6", "6b": "6"}
     meta_df["layer"] = "unk"
     for sl in struct_layer:
-        meta_df.ix[[s.endswith(sl) if type(s) == str else False for s in meta_df["structure"]], "layer"] = struct_layer[sl]
+        meta_df.loc[[s.endswith(sl) if type(s) == str else False for s in meta_df["structure"]], "layer"] = struct_layer[sl]
     meta_df["cre_layer"] = meta_df["cre_w_status"] + " " + meta_df["layer"]
     meta_df["dendrite_type"] = [s.replace("dendrite type - ", "") if type(s) is str else np.nan for s in meta_df["dendrite_type"]]
 

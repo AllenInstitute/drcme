@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 
-from __future__ import print_function
 import numpy as np
 import pandas as pd
 import argschema as ags
@@ -80,7 +79,8 @@ def main(cocluster_matrix_file, jaccards_file, cluster_labels_file, ordering_fil
     new_order = np.loadtxt(ordering_file).astype(int)
 
     unstable_clusters = np.flatnonzero(jaccards.mean(axis=1) < unstable_threshold)
-    intact_clusters = np.flatnonzero(jaccards.mean(axis=1) >= 0.5)
+    intact_clusters = np.flatnonzero(jaccards.mean(axis=1) >= unstable_threshold)
+    logging.info("Found {:d} intact clusters".format(len(intact_clusters)))
     logging.info("Found {:d} unstable clusters".format(len(unstable_clusters)))
 
     intact_rates = intact_match_rates(clust_labels, shared, intact_clusters)
