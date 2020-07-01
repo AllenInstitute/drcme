@@ -319,6 +319,7 @@ def load_organized_data(project, base_dir, params_file, dendrite_type,
 
 def load_h5_data(h5_fv_file, params_file, metadata_file=None, dendrite_type="all",
         need_structure=False,
+        need_ramp_spike=True,
         include_dend_type_null=True,
         limit_to_cortical_layers=None,
         id_file=None):
@@ -339,6 +340,8 @@ def load_h5_data(h5_fv_file, params_file, metadata_file=None, dendrite_type="all
     need_structure: bool (optional, default False)
         Requires that structure is present (only used
         if metadata file is supplied)
+    need_ramp_spike: bool (optional, default True)
+        Requires that the ramp spike is non-zero (aka not missing)
     include_dend_type_null: bool (optional, default True)
         Also include cells without a dendrite type available regardless of
         what `dendrite_type` is specified (only used
@@ -363,15 +366,18 @@ def load_h5_data(h5_fv_file, params_file, metadata_file=None, dendrite_type="all
     specimen_ids = f["ids"][...]
     logging.info("Starting with {:d} cells".format(len(specimen_ids)))
 
-    # Identify cells with no ramp spike
-    first_ap_v = f["first_ap_v"][...]
+    if need_ramp_spike:
+        # Ramp waveform expected to be last
+        # Identify cells with no ramp spike
+        first_ap_v = f["first_ap_v"][...]
 
-    # Expected to have three equal-length AP waveforms
-    n_bins = first_ap_v.shape[1] // 3
-
-    # Ramp waveform expected to be last
-    ramp_mask = ~np.all(first_ap_v[:, -n_bins:] == 0, axis=1)
-    logging.info("{} cells have no ramp AP".format(np.sum(ramp_mask == False)))
+        # Expected to have three equal-length AP waveforms
+        n_bins = first_ap_v.shape[1] // 3
+        ramp_mask = ~np.all(first_ap_v[:, -n_bins:] == 0, axis=1)
+        logging.info("{} cells have no ramp AP".format(np.sum(ramp_mask == False)))
+    else:
+        logging.info("Including cells without ramp AP")
+        ramp_mask = np.ones_like(specimen_ids).astype(bool)
 
     if metadata_file is not None:
         logging.debug("Using metadata file {}".format(metadata_file))
