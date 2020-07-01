@@ -132,7 +132,6 @@ def consensus_clusters(results, min_clust_size = 3):
         uniq_labels = np.unique(clust_labels)
         new_labels = np.zeros_like(clust_labels)
         for l in uniq_labels:
-    #         print "old cluster", l
             cl_mask = clust_labels == l
             X = shared_norm[cl_mask, :][:, cl_mask]
             Z = hierarchy.linkage(X, method="ward")
@@ -144,9 +143,7 @@ def consensus_clusters(results, min_clust_size = 3):
                 sub_labels += (2 * int(l)) - 1
 
             new_labels[cl_mask] = sub_labels
-    #         print pd.Series(sub_labels).value_counts()
 
-#         print "ari with previous", metrics.adjusted_rand_score(clust_labels, new_labels)
         if metrics.adjusted_rand_score(clust_labels, new_labels) == 1:
             keep_going = False
         clust_labels = new_labels
@@ -162,12 +159,10 @@ def consensus_clusters(results, min_clust_size = 3):
         merges = []
         for i, l in enumerate(uniq_labels):
             for j, m in enumerate(uniq_labels[i + 1:]):
-        #             print "checking", l, "vs", m
                 Nll = cc_rates[i, i]
                 Nmm = cc_rates[i + j + 1, i + j + 1]
                 Nlm = cc_rates[i, i + j + 1]
                 if Nlm > np.max([Nll, Nmm]) - 0.25:
-#                     print "could merge", l, m
                     merges.append((l, m, Nlm))
 
         if len(merges) == 0:
@@ -178,7 +173,6 @@ def consensus_clusters(results, min_clust_size = 3):
                 if nlm > best_cross:
                     best_cross = nlm
                     merge = (l, m)
-#             print "actually merging", l, m
             l, m = merge
             clust_labels[clust_labels == m] = l
 
@@ -202,29 +196,33 @@ def refine_assignments(clust_labels, shared_norm):
         last_reassignments = reassignments
         reassignments = []
         # Check within and against
-        for i in range(shared_norm.shape[0]):
-            self_mask = np.ones(shared_norm.shape[0]).astype(bool)
-            self_mask[i] = False
-            cell_rates = []
-            for l in uniq_labels:
-                cl_mask = clust_labels == l
-                if np.sum(cl_mask & self_mask) == 0:
-                    cell_rates.append(0.)
-                else:
-                    cell_rates.append(shared_norm[i, cl_mask & self_mask].mean())
-            best_match_ind = np.argmax(cell_rates)
-            if uniq_labels[best_match_ind] != clust_labels[i]:
-                reassignments.append((i, uniq_labels[best_match_ind], cell_rates[best_match_ind]))
+        cl_masks = np.zeros((shared_norm.shape[0], len(uniq_labels)))
+        for i, l in enumerate(uniq_labels):
+            cl_masks[:, i] = (clust_labels == l).astype(int)
+        cl_n = cl_masks.sum(axis=0)
 
-        if len(reassignments) == 0:
+        cl_sums = shared_norm @ cl_masks
+        self_vals = np.diag(shared_norm)[:, np.newaxis] * cl_masks
+        self_masks = (self_vals > 0).astype(float)
+        cl_adj_sums = cl_sums - self_vals
+        cl_adj_n = cl_n[np.newaxis, :] - self_masks
+        cl_adj_n[cl_adj_n == 0] = 1 # avoid divide by zero
+
+        cl_rates = cl_adj_sums / cl_adj_n
+        rate_argmax = np.argmax(cl_rates, axis=1)
+        assign_argmax = np.argmax(self_masks, axis=1)
+        switch_candidates = np.flatnonzero(rate_argmax != assign_argmax)
+        if len(switch_candidates) == 0:
             keep_going = False
         else:
-            switch_ind = np.argmax([r[2] for r in reassignments])
-            i, l, r = reassignments[switch_ind]
-            clust_labels[i] = l
+            rate_max = np.max(cl_rates, axis=1)
+            switch_ind = switch_candidates[np.argmax(rate_max[switch_candidates])]
+            new_assignment = uniq_labels[rate_argmax[switch_ind]]
+            logging.debug(f"switching {switch_ind} to {new_assignment}")
+            clust_labels[switch_ind] = new_assignment
 
         state_hash = sha1(clust_labels).hexdigest()
-        if state_hash in state_hashes:
+        if state_hash in state_hashes: # have we encountered this set of assignments before?
             keep_going = False
         else:
             state_hashes.append(state_hash)
@@ -232,26 +230,27 @@ def refine_assignments(clust_labels, shared_norm):
     return clust_labels
 
 
-def coclust_rates(shared, clust_labels):
-        uniq_labels = np.unique(clust_labels)
-
+def coclust_rates(shared, clust_labels, uniq_labels):
         cc_rates = np.zeros((len(uniq_labels), len(uniq_labels)))
         for i, l in enumerate(uniq_labels):
+            mask_l = clust_labels == l
             for j, m in enumerate(uniq_labels[i:]):
-                mask_l = clust_labels == l
                 mask_m = clust_labels == m
                 X = shared[mask_l, :][:, mask_m]
                 if l == m:
                     ind1, ind2 = np.tril_indices(X.shape[0], k=-1)
                     X = X[ind1, :][:, ind2]
-                cc_rates[i, i + j] = cc_rates[i + j, i] = X.mean()
+                if X.size > 0:
+                    cc_rates[i, i + j] = cc_rates[i + j, i] = X.mean()
+                else:
+                    cc_rates[i, i + j] = cc_rates[i + j, i] = 0
 
         return cc_rates
 
 
 def subsample_run(original_labels, specimen_ids, morph_X, ephys_spca,
                   weights=[1, 2, 5], n_cl=[10, 15, 20, 25], n_nn=[4, 7, 10],
-                  n_folds=10, n_iter=1):
+                  n_folds=10, n_iter=1, min_consensus_n=3):
 
     run_info_list = [{
         "iter_number": i,
@@ -263,6 +262,7 @@ def subsample_run(original_labels, specimen_ids, morph_X, ephys_spca,
         "n_cl": n_cl,
         "n_nn": n_nn,
         "n_folds": n_folds,
+        "min_consensus_n": min_consensus_n,
     } for i in range(n_iter)]
 
 
@@ -288,6 +288,7 @@ def individual_subsample_run(run_info):
     n_cl = run_info["n_cl"]
     n_nn = run_info["n_nn"]
     n_folds = run_info["n_folds"]
+    min_consensus_n = run_info["min_consensus_n"]
 
     orig_labels_uniq = np.sort(np.unique(original_labels))
 
@@ -296,14 +297,15 @@ def individual_subsample_run(run_info):
     kf = model_selection.KFold(n_splits=n_folds, shuffle=True, random_state=i)
     counter = 0
     for train_index, _ in kf.split(original_labels):
-#         print "running {:d} {:d}".format(i, counter)
+        logging.info("starting {:d} {:d}".format(i, counter))
         subsample_results = all_cluster_calls(specimen_ids[train_index],
                                               morph_X[train_index, :],
-                                              ephys_spca.iloc[train_index, :],
+                                              ephys_spca[train_index, :],
                                               weights=weights,
                                               n_cl=n_cl,
                                               n_nn=n_nn)
-        subsample_labels, _, _ = consensus_clusters(subsample_results.values[:, 1:])
+        subsample_labels, _, _ = consensus_clusters(
+            subsample_results.values[:, 1:], min_clust_size=min_consensus_n)
 
         sub_uniq = np.sort(np.unique(subsample_labels))
         for ii, orig_cl in enumerate(orig_labels_uniq):
