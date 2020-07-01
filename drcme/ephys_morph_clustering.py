@@ -109,10 +109,8 @@ def spectral_combo_cluster_calls(results_df, morph_X, ephys_spca,
         EM_data = np.hstack([morph_X, wt * ephys_spca])
         for cl in n_cl:
             key = "spec_combo_{:g}_{:d}".format(wt, cl)
-            model = cluster.bicluster.SpectralBiclustering(cl, method="scale", n_init=20, random_state=0)
-            model.fit(EM_data)
-            results_df[key] = model.row_labels_
-
+            model = cluster.SpectralClustering(cl, gamma=0.01, n_init=20, random_state=0)
+            results_df[key] = model.fit_predict(EM_data)
     return results_df
 
 
@@ -181,13 +179,15 @@ def consensus_clusters(results, min_clust_size = 3):
                     best_cross = nlm
                     merge = (l, m)
 #             print "actually merging", l, m
+            l, m = merge
             clust_labels[clust_labels == m] = l
 
     clust_labels = refine_assignments(clust_labels, shared_norm)
     # Clean up the labels
     new_map = {v: i for i, v in enumerate(np.sort(np.unique(clust_labels)))}
     clust_labels = np.array([new_map[v] for v in clust_labels])
-    cc_rates = coclust_rates(shared_norm, clust_labels)
+    uniq_labels = np.unique(clust_labels)
+    cc_rates = coclust_rates(shared_norm, clust_labels, uniq_labels)
 
     return clust_labels, shared_norm, cc_rates
 
