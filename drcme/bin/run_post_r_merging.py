@@ -32,7 +32,7 @@ class PostGmmMergingParameters(ags.ArgSchema):
 def main(tau_file, labels_file, merge_info_file, entropy_piecewise_components, **kwargs):
     """ Main runner function for script.
 
-    See :class:`PostGmmMergingParameters` parameters for argument descriptions.
+    See :class:`PostGmmMergingParameters` for argument descriptions.
     """
     tau = pd.read_csv(tau_file, index_col=0).values
     labels = pd.read_csv(labels_file, index_col=0).values
