@@ -71,7 +71,7 @@ def main(orig_transform_file, orig_datasets, new_datasets, params_file,
          output_file, **kwargs):
     """ Main runner function for script.
 
-    See argschema input parameters for argument descriptions.
+    See :class:`SpcaTransformParameters` for argument descriptions.
     """
 
     spca_zht_params, _ = ld.define_spca_parameters(params_file)

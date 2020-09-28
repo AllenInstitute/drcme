@@ -17,6 +17,7 @@ import sys
 
 
 class MeClusteringParameters(ags.ArgSchema):
+    """Parameter schema for electrophysiology/morphology clustering"""
     ephys_file = ags.fields.InputFile(
         description="CSV file path with sparse PCA electrophysiology values")
     morph_file = ags.fields.InputFile(
@@ -53,7 +54,7 @@ def main(ephys_file, morph_file,
          **kwargs):
     """ Main runner function for script.
 
-    See argschema input parameters for argument descriptions.
+    See :class:`MeClusteringParameters` for argument descriptions.
     """
 
     # Load the data

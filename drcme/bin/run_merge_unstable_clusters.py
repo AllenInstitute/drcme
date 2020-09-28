@@ -1,4 +1,9 @@
-#!/usr/bin/env python
+"""
+Script for merging unstable clusters into stable ones.
+
+.. autoclass:: UnstableClusterMergingParameters
+
+"""
 
 import drcme.post_gmm_merging as pgm
 import numpy as np
@@ -9,20 +14,37 @@ import logging
 import argschema as ags
 
 class UnstableClusterMergingParameters(ags.ArgSchema):
-    components_file = ags.fields.InputFile()
-    post_merge_tau_file = ags.fields.InputFile()
-    post_merge_labels_file = ags.fields.InputFile()
-    jaccard_file = ags.fields.InputFile()
-    post_merge_proba_file = ags.fields.OutputFile()
-    etypes_file = ags.fields.OutputFile()
-    merge_unstable_info_file = ags.fields.OutputFile()
-    stability_threshold = ags.fields.Float(default=0.5)
-    outliers = ags.fields.List(ags.fields.Integer)
+    """Parameter schema for unstable cluster merging"""
+    components_file = ags.fields.InputFile(
+        description="Path to CSV file with sPCA components")
+    post_merge_tau_file = ags.fields.InputFile(
+        description="Path to file with cluster membership probabilities after entropy-based merging")
+    post_merge_labels_file = ags.fields.InputFile(
+        description="Path to file with cluster labels after entropy-based merging")
+    jaccard_file = ags.fields.InputFile(
+        description="Path to file with Jaccard index values after subset-based stability analysis")
+    post_merge_proba_file = ags.fields.OutputFile(
+        description="Path to file with post-merging cluster membership probabilities")
+    etypes_file = ags.fields.OutputFile(
+        description="Path to file with stable e-type assignments")
+    merge_unstable_info_file = ags.fields.OutputFile(
+        description="Path to file with merge sequence information")
+    stability_threshold = ags.fields.Float(
+        description="Threshold below which clusters are considered unstable",
+        default=0.5)
+    outliers = ags.fields.List(ags.fields.Integer,
+        description="Specimen IDs to exclude from analysis"
+    )
 
 
 def main(components_file, post_merge_tau_file, post_merge_labels_file, jaccard_file,
          post_merge_proba_file, etypes_file, merge_unstable_info_file,
          outliers, stability_threshold, **kwargs):
+    """ Main runner function for script.
+
+    See :class:`UnstableClusterMergingParameters` for argument descriptions.
+    """
+
     data = pd.read_csv(components_file, index_col=0)
     tau = pd.read_csv(post_merge_tau_file, index_col=0)
     labels = pd.read_csv(post_merge_labels_file, index_col=0)
