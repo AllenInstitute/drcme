@@ -1,3 +1,23 @@
+"""
+Script to run sparse principal component analysis on electrophysiology feature vectors.
+
+The electrophysiology feature vectors used as inputs are in the form processed by the
+`IPFX package <https://ipfx.readthedocs.io>`_. An optional metadata file can be given as
+an input to filter the cells in the data set.
+
+The script produces several outputs in the specified ``output_dir``, named with a specified
+``output_code``.
+
+- *sparse_principal_components_[output_code].csv*: sPCA values for each cell.
+- *spca_components_used_[output_code].json*: List of kept components for each data subset.
+- *spca_loadings_[output_code].pkl*: sPCA loadings, adjust explained variance, and transformed
+  values for each data subset. Uses the ``joblib`` library for saving/loading.
+
+.. autoclass:: DatasetParameters
+.. autoclass:: AnalysisParameters
+
+"""
+
 import numpy as np
 import pandas as pd
 import drcme.spca_fit as sf
@@ -10,28 +30,61 @@ import json
 
 
 class DatasetParameters(ags.schemas.DefaultSchema):
-    fv_h5_file = ags.fields.InputFile(description="HDF5 file with feature vectors")
-    metadata_file = ags.fields.InputFile(description="Metadata file in CSV format", allow_none=True, default=None)
-    dendrite_type = ags.fields.String(default="all", validate=lambda x: x in ["all", "spiny", "aspiny"])
-    allow_missing_structure = ags.fields.Boolean(required=False, default=False)
-    allow_missing_dendrite = ags.fields.Boolean(required=False, default=False)
-    need_ramp_spike = ags.fields.Boolean(required=False, default=True)
-    limit_to_cortical_layers = ags.fields.List(ags.fields.String, default=[], cli_as_single_argument=True)
-    id_file = ags.fields.InputFile(description="Text file with IDs to use",
-        required=False, allow_none=True, default=None)
+    """Parameter schema for input datasets"""
+    fv_h5_file = ags.fields.InputFile(
+        description="HDF5 file with feature vectors")
+    metadata_file = ags.fields.InputFile(
+        description="Metadata file in CSV format",
+        allow_none=True,
+        default=None)
+    dendrite_type = ags.fields.String(
+        default="all",
+        description="Filter for dendrite type using information in metadata (all, spiny, aspiny)",
+        validate=lambda x: x in ["all", "spiny", "aspiny"])
+    allow_missing_structure = ags.fields.Boolean(
+        required=False,
+        description="Whether or not structure value for cell in metadata can be missing",
+        default=False)
+    allow_missing_dendrite = ags.fields.Boolean(
+        required=False,
+        description="Whether or not dendrite type value for cell in metadata can be missing",
+        default=False)
+    need_ramp_spike = ags.fields.Boolean(
+        required=False,
+        description="Whether or not to exclude cells that did not fire an action potential from the ramp stimulus",
+        default=True)
+    limit_to_cortical_layers = ags.fields.List(
+        ags.fields.String,
+        description="List of cortical layers to limit the data set (using the metadata file)",
+        default=[],
+        cli_as_single_argument=True)
+    id_file = ags.fields.InputFile(
+        description="Text file with specimen IDs to use. Cells with IDs not in the file will be excluded.",
+        required=False,
+        allow_none=True,
+        default=None)
 
 
 class AnalysisParameters(ags.ArgSchema):
-    params_file = ags.fields.InputFile(default="/allen/programs/celltypes/workgroups/ivscc/nathang/single-cell-ephys/dev/default_spca_params.json")
-    output_dir = ags.fields.OutputDir(description="directory for output files")
-    output_code = ags.fields.String(description="code for output files")
+    """Parameter schema for sPCA analysis"""
+    params_file = ags.fields.InputFile(
+        default="/allen/programs/celltypes/workgroups/ivscc/nathang/single-cell-ephys/dev/default_spca_params.json",
+        description="JSON file with sPCA parameters")
+    output_dir = ags.fields.OutputDir(
+        description="Directory for output files")
+    output_code = ags.fields.String(
+        description="Code for naming output files")
     datasets = ags.fields.Nested(DatasetParameters,
                                  required=True,
                                  many=True,
-                                 description="schema for loading one or more specific datasets for the analysis")
+                                 description="Schema for loading one or more specific datasets for the analysis")
 
 
 def main(params_file, output_dir, output_code, datasets, **kwargs):
+    """ Main runner function for script.
+
+    See argschema input parameters for argument descriptions.
+    """
 
     # Load data from each dataset
     data_objects = []
