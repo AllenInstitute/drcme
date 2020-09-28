@@ -6,6 +6,10 @@
 Welcome to DRCME's documentation!
 =================================
 
+This Python module has different functions and scripts for clustering neurons
+by their electrophysiology and morphology properties that has been characterized
+in a standardized way.
+
 .. toctree::
    :maxdepth: 2
    :caption: Contents:
