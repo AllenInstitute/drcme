@@ -1,6 +1,5 @@
 """
-Script to use an entropy-criterion for merging GMM components into a smaller number of
-clusters as described by `Baudry et al. (2010) <https://www.tandfonline.com/doi/abs/10.1198/jcgs.2010.08111>`_.
+Script to apply an existing set of sPCA loadings to a new data set.
 
 .. autoclass:: DatasetParameters
 .. autoclass:: SpcaTransformParameters
