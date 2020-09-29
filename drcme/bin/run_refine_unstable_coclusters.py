@@ -1,8 +1,8 @@
 """
 Script to merge cells from unstable clusters into the most similar stable ones.
 
-The script identifies unstable clusters by the Jaccard index falling below a specified
-threshold (``unstable_threshold``). It then sees how similar the unstable cluster is
+The script identifies unstable clusters by their Jaccard coefficients falling below a specified
+threshold (``unstable_threshold``). It then determines how similar the unstable cluster is
 to other stable clusters. If it is too dissimilar, it is kept as its own cluster. Otherwise,
 the unstable cluster is dissolved and its cells are assigned to their best-matching
 clusters.
@@ -10,7 +10,8 @@ clusters.
 It determines whether to dissolve a cluster by calculating whether or not each cell in the
 unstable cluster has a good match to a stable cluster (i.e., the co-clustering rate exceeds
 ``coclust_threshold``). If enough of the cells of the unstable cluster have good matches
-(the fraction of cells exceeds ``pct_needed``), the cluster is dissolved.
+(the fraction of matching cells exceeds ``pct_needed``), the cluster is dissolved and the
+cells of that cluster are reassigned to stable clusters.
 
 .. autoclass:: RefineParameters
 
@@ -31,7 +32,7 @@ class RefineParameters(ags.ArgSchema):
     cocluster_matrix_file = ags.fields.InputFile(
         description="File path for co-clustering matrix")
     jaccards_file = ags.fields.InputFile(
-        description="File path for Jaccard scores")
+        description="File path for Jaccard coefficients")
     cluster_labels_file = ags.fields.InputFile(
         description="File path for cluster labels")
 
@@ -42,7 +43,7 @@ class RefineParameters(ags.ArgSchema):
     refined_ordering_file = ags.fields.OutputFile(
         description="Output file path for refined cluster labels")
     unstable_threshold = ags.fields.Float(
-        description="Threshold for Jaccard score to determine stability",
+        description="Threshold for Jaccard coefficients to determine stability",
         default=0.5)
     coclust_threshold = ags.fields.Float(
         description="Threshold for co-clustering rate to be considered a match to another cluster",

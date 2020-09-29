@@ -22,7 +22,7 @@ class UnstableClusterMergingParameters(ags.ArgSchema):
     post_merge_labels_file = ags.fields.InputFile(
         description="Path to file with cluster labels after entropy-based merging")
     jaccard_file = ags.fields.InputFile(
-        description="Path to file with Jaccard index values after subset-based stability analysis")
+        description="Path to file with Jaccard coefficient values after subset-based stability analysis")
     post_merge_proba_file = ags.fields.OutputFile(
         description="Path to file with post-merging cluster membership probabilities")
     etypes_file = ags.fields.OutputFile(

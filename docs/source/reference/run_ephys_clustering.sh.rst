@@ -17,7 +17,7 @@ Parameter                               Description
 ``merge_info_file``                     Path to JSON file with number of components after entropy-based merging (output of `drcme.bin.run_post_r_merging`)
 ``post_merge_tau_file``                 Path to file with cluster membership probabilities after entropy-based merging (output of `run_entropy_cumul_merges.r`)
 ``post_merge_labels_file``              Path to file with cluster labels after entropy-based merging (output of `run_entropy_cumul_merges.r`)
-``jaccard_file``                        Path to file with Jaccard index values after subset-based stability analysis (output of `run_cluster_stability.r`)
+``jaccard_file``                        Path to file with Jaccard coefficient values after subset-based stability analysis (output of `run_cluster_stability.r`)
 ``etypes_file``                         Path to file with stable e-type assignments (output of `drcme.bin.run_merge_unstable_clusters`)
 ``post_merge_proba_file``               Path to file with post-merging cluster membership probabilities (output of `drcme.bin.run_merge_unstable_clusters`)
 ``merge_unstable_info_file``            Path to file with merge sequence information (output of `drcme.bin.run_merge_unstable_clusters`)

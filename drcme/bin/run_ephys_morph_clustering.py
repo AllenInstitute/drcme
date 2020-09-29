@@ -42,7 +42,7 @@ class MeClusteringParameters(ags.ArgSchema):
     specimen_id_file = ags.fields.OutputFile(
         description="Output file path for specimen IDs")
     jaccards_file = ags.fields.OutputFile(
-        description="Output file path for Jaccard scores")
+        description="Output file path for Jaccard coefficients")
     ordering_file = ags.fields.OutputFile(
         description="Output file path for new cluster order")
 
