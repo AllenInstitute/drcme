@@ -1,17 +1,22 @@
 """
-Script to run sparse principal component analysis on electrophysiology feature vectors.
+Script to run sparse principal component analysis on electrophysiology
+feature vectors.
 
-The electrophysiology feature vectors used as inputs are in the form processed by the
-`IPFX package <https://ipfx.readthedocs.io>`_. An optional metadata file can be given as
-an input to filter the cells in the data set.
+The electrophysiology feature vectors used as inputs are in the form
+processed by the `IPFX package <https://ipfx.readthedocs.io>`_. An
+optional metadata file can be given as an input to filter the cells in
+the data set.
 
-The script produces several outputs in the specified ``output_dir``, named with a specified
-``output_code``.
+The script produces several outputs in the specified ``output_dir``,
+named with a specified ``output_code``.
 
-- *sparse_principal_components_[output_code].csv*: sPCA values for each cell.
-- *spca_components_used_[output_code].json*: List of kept components for each data subset.
-- *spca_loadings_[output_code].pkl*: sPCA loadings, adjust explained variance, and transformed
-  values for each data subset. Uses the ``joblib`` library for saving/loading.
+- *sparse_principal_components_[output_code].csv*: sPCA values for each
+  cell.
+- *spca_components_used_[output_code].json*: List of kept components
+  for each data subset.
+- *spca_loadings_[output_code].pkl*: sPCA loadings, adjust explained
+  variance, and transformed values for each data subset. Uses the
+  ``joblib`` library for saving/loading.
 
 .. autoclass:: DatasetParameters
 .. autoclass:: AnalysisParameters
@@ -20,7 +25,7 @@ The script produces several outputs in the specified ``output_dir``, named with 
 
 import numpy as np
 import pandas as pd
-import drcme.spca_fit as sf
+import drcme.spca as spca
 import drcme.load_data as ld
 import argschema as ags
 import joblib
@@ -125,9 +130,9 @@ def main(params_file, output_dir, output_code, datasets, **kwargs):
     spca_zht_params, _ = ld.define_spca_parameters(filename=params_file)
 
     # Run sPCA
-    subset_for_spca = sf.select_data_subset(data_for_spca, spca_zht_params)
-    spca_results = sf.spca_on_all_data(subset_for_spca, spca_zht_params)
-    combo, component_record = sf.consolidate_spca(spca_results)
+    subset_for_spca = spca.select_data_subset(data_for_spca, spca_zht_params)
+    spca_results = spca.spca_on_all_data(subset_for_spca, spca_zht_params)
+    combo, component_record = spca.consolidate_spca(spca_results)
 
     logging.info("Saving results...")
     joblib.dump(spca_results, os.path.join(output_dir, "spca_loadings_{:s}.pkl".format(output_code)))

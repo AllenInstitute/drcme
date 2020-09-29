@@ -11,7 +11,7 @@ import pandas as pd
 import argschema as ags
 import joblib
 import drcme.load_data as ld
-from drcme.spca_transform import orig_mean_and_std_for_zscore, spca_transform_new_data
+from drcme.spca import orig_mean_and_std_for_zscore, spca_transform_new_data
 import logging
 
 
