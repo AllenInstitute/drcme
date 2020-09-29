@@ -68,7 +68,6 @@ class DatasetParameters(ags.schemas.DefaultSchema):
 class AnalysisParameters(ags.ArgSchema):
     """Parameter schema for sPCA analysis"""
     params_file = ags.fields.InputFile(
-        default="/allen/programs/celltypes/workgroups/ivscc/nathang/single-cell-ephys/dev/default_spca_params.json",
         description="JSON file with sPCA parameters")
     output_dir = ags.fields.OutputDir(
         description="Directory for output files")
