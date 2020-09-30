@@ -1,4 +1,6 @@
 """
+The :mod:`drcme.ephys_morph_clustering` module contains functions for performing
+joint clustering of electrophysiology and morphology data.
 """
 
 import numpy as np
