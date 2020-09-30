@@ -1,5 +1,6 @@
-from builtins import map
-from builtins import range
+"""
+"""
+
 import numpy as np
 import pandas as pd
 
@@ -28,36 +29,42 @@ def clustjaccard(y_true, y_pred):
     return float(np.sum(y_true & y_pred)) / (np.sum(y_true) + np.sum(y_pred) - np.sum(y_true & y_pred))
 
 
-def all_cluster_calls(specimen_ids, morph_X, ephys_spca,
+def all_cluster_calls(specimen_ids, morph_data, ephys_data,
                       weights=[1, 2, 5], n_cl=[10, 15, 20, 25], n_nn=[4, 7, 10]):
+    """ Perform several clustering algorithms and variations
+
+    Parameters
+    ----------
+    specimen_ids : array
+        Specimen labels of `morph_data` and `ephys_data`
+    morph_data : array
+        Specimens by morphology features array
+    ephys_data : array
+        Specimens by electrophysiology features array
+    weights : list, optional
+        Set of relative electrophysiology weights
+    n_cl : list, optional
+        Set of cluster numbers
+    n_nn : list, optional
+        Set of nearest-neighbor values
+
+    Returns
+    -------
+    DataFrame
+        Combined clustering results. The index is the set of `specimen_ids`.
+    """
     results_df = pd.DataFrame({"specimen_id": specimen_ids}).set_index("specimen_id")
 
-    results_df = hc_nn_cluster_calls(results_df, morph_X, ephys_spca,
+    results_df = hc_nn_cluster_calls(results_df, morph_data, ephys_data,
                                      n_nn=n_nn, n_cl=n_cl)
-    results_df = hc_combo_cluster_calls(results_df, morph_X, ephys_spca,
+    results_df = hc_combo_cluster_calls(results_df, morph_data, ephys_data,
                                         weights=weights, n_cl=n_cl)
-    results_df = gmm_combo_cluster_calls(results_df, morph_X, ephys_spca,
+    results_df = gmm_combo_cluster_calls(results_df, morph_data, ephys_data,
                                          weights=weights, n_cl=n_cl)
-    results_df = spectral_combo_cluster_calls(results_df, morph_X, ephys_spca,
+    results_df = spectral_combo_cluster_calls(results_df, morph_data, ephys_data,
                                               weights=weights, n_cl=n_cl)
 
     return results_df
-
-
-def usual_key_list(n_nn=[4, 7, 10], weights=[1, 2, 5], n_cl=[10, 15, 20, 25]):
-    key_order = []
-
-    for cl in n_cl:
-        subkeys = ["hc_conn"]
-        for k in subkeys:
-            for nn in n_nn:
-                key_order.append("{:s}_{:d}_{:d}".format(k, nn, cl))
-
-        subkeys = ["hc_combo", "gmm_combo", "spec_combo"]
-        for k in subkeys:
-            for wt in weights:
-                key_order.append("{:s}_{:g}_{:d}".format(k, wt, cl))
-    return key_order
 
 
 def hc_nn_cluster_calls(results_df, morph_X, ephys_spca,
