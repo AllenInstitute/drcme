@@ -22,8 +22,6 @@ class ComboTsneParameters(ags.ArgSchema):
         description="Path to second sPCA values file")
     output_file = ags.fields.OutputFile(
         description="Path to output file for t-SNE coordinates")
-    n_components = ags.fields.Integer(default=2,
-        description="Number of components for t-SNE")
     perplexity = ags.fields.Float(default=25.,
         description="Perplexity parameter for t-SNE")
     n_iter = ags.fields.Integer(default=20000,
@@ -40,7 +38,7 @@ def main(spca_file_1, spca_file_2, output_file,
     df_1 = pd.read_csv(spca_file_1, index_col=0)
     df_2 = pd.read_csv(spca_file_2, index_col=0)
 
-    combo_df = tsne.combined_tsne(df_1, df_2, n_components, perplexity, n_iter)
+    combo_df = tsne.combined_tsne(df_1, df_2, perplexity, n_iter)
     combo_df.to_csv(output_file)
 
 

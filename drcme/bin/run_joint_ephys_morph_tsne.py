@@ -25,8 +25,6 @@ class JointTsneParameters(ags.ArgSchema):
         description="Path to output file for t-SNE coordinates")
     relative_ephys_weight = ags.fields.Float(default=1.,
         description="Relative weight of electrophysiology values (vs morphology values)")
-    n_components = ags.fields.Integer(default=2,
-        description="Number of components for t-SNE")
     perplexity = ags.fields.Float(default=25.,
         description="Perplexity parameter for t-SNE")
     n_iter = ags.fields.Integer(default=20000,
@@ -34,7 +32,7 @@ class JointTsneParameters(ags.ArgSchema):
 
 
 def main(ephys_file, morph_file, output_file, relative_ephys_weight,
-         n_components, perplexity, n_iter, **kwargs):
+         perplexity, n_iter, **kwargs):
     """ Main runner function for script.
 
     See :class:`JointTsneParameters` for argument descriptions.
@@ -44,7 +42,7 @@ def main(ephys_file, morph_file, output_file, relative_ephys_weight,
     morph_df = pd.read_csv(morph_file, index_col=0).dropna(axis=1)
 
     result = tsne.dual_modal_tsne(ephys_df, morph_df, relative_ephys_weight,
-                                  n_components, perplexity, n_iter)
+                                  perplexity, n_iter)
     result.to_csv(output_file)
 
 
