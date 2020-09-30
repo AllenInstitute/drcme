@@ -325,7 +325,3 @@ def individual_subsample_run(run_info):
         counter += 1
 
     return jaccards
-
-
-def sort_order(clust_labels):
-    return np.lexsort((clust_labels,))
