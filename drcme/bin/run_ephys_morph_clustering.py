@@ -80,7 +80,7 @@ def main(ephys_file, morph_file,
                                        n_cl=n_cl)
     clust_labels, shared, cc_rates = emc.consensus_clusters(
         results_df.values[:, 1:], min_clust_size=min_consensus_n)
-    new_order = emc.sort_order(clust_labels)
+    new_order = np.lexsort((clust_labels,))
 
     logging.info(f"Identified {len(np.unique(clust_labels))} consensus clusters with full data set")
 
