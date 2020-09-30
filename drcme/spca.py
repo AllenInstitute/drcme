@@ -1,3 +1,8 @@
+"""
+The :mod:`drcme.spca` module contains functions for performing
+sparse principal component analysis.
+"""
+
 import numpy as np
 import scipy
 import scipy.linalg as sl
@@ -21,11 +26,11 @@ def consolidate_spca(spca_results, adj_exp_var_threshold=0.01):
         retain sPCs
 
     Returns :
-        combined_matrix : (n_samples, n total sPCs) array
-            Z-scored matrix of all sPC-transformed values
-        component_record : list
-            List of kept component information for each key of
-            `spca_results`
+    combined_matrix : (n_samples, n total sPCs) array
+        Z-scored matrix of all sPC-transformed values
+    component_record : list
+        List of kept component information for each key of
+        `spca_results`
     """
     Z_list = []
     component_record = []
