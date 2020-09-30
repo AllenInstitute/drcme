@@ -36,6 +36,7 @@ extensions = [
     'sphinx.ext.viewcode',
     'sphinx.ext.autosummary',
     'sphinx.ext.napoleon',
+    'sphinx.ext.intersphinx',
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -49,6 +50,8 @@ autosummary_generate = True
 # This pattern also affects html_static_path and html_extra_path.
 exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 
+# Mappings to other documentation
+intersphinx_mapping = {"ipfx": ("https://ipfx.readthedocs.io/en/latest", None)}
 
 # -- Options for HTML output -------------------------------------------------
 
