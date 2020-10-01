@@ -4,7 +4,7 @@ DRCME is a package for dimensionality reduction and clustering of morphological 
 
 ## Documentation
 
-The documentation for this package can be found at [https://drcme.readthedocs.io/en/latest/]().
+The documentation for this package can be found at <https://drcme.readthedocs.io/en/latest/>.
 
 ## Level of support
 
