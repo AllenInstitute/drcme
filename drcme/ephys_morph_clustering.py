@@ -1,5 +1,8 @@
-from builtins import map
-from builtins import range
+"""
+The :mod:`drcme.ephys_morph_clustering` module contains functions for performing
+joint clustering of electrophysiology and morphology data.
+"""
+
 import numpy as np
 import pandas as pd
 
@@ -20,6 +23,24 @@ import sys
 
 
 def clustjaccard(y_true, y_pred):
+    """Calculate Jaccard coefficient
+
+    Ranges from 0 to 1. Higher values indicate greater similarity.
+
+    Parameters
+    ----------
+    y_true : list or array
+        Boolean indication of cluster membership (1 if belonging, 0 if
+        not belonging) for actual labels
+    y_pred : list or array
+        Boolean indication of cluster membership (1 if belonging, 0 if
+        not belonging) for predicted labels
+
+    Returns
+    -------
+    float
+        Jaccard coefficient value
+    """
     if type(y_true) is list:
         y_true = np.array(y_true)
 
@@ -28,41 +49,72 @@ def clustjaccard(y_true, y_pred):
     return float(np.sum(y_true & y_pred)) / (np.sum(y_true) + np.sum(y_pred) - np.sum(y_true & y_pred))
 
 
-def all_cluster_calls(specimen_ids, morph_X, ephys_spca,
+def all_cluster_calls(specimen_ids, morph_data, ephys_data,
                       weights=[1, 2, 5], n_cl=[10, 15, 20, 25], n_nn=[4, 7, 10]):
+    """Perform several clustering algorithms and variations
+
+    Parameters
+    ----------
+    specimen_ids : array
+        Specimen labels of `morph_data` and `ephys_data`
+    morph_data : array
+        Specimens by morphology features array
+    ephys_data : array
+        Specimens by electrophysiology features array
+    weights : list, optional
+        Set of relative electrophysiology weights
+    n_cl : list, optional
+        Set of cluster numbers
+    n_nn : list, optional
+        Set of nearest-neighbor values
+
+    Returns
+    -------
+    DataFrame
+        Combined clustering results. The index is the set of
+        `specimen_ids`. Each column contains cluster labels for a
+        different clustering variant.
+    """
     results_df = pd.DataFrame({"specimen_id": specimen_ids}).set_index("specimen_id")
 
-    results_df = hc_nn_cluster_calls(results_df, morph_X, ephys_spca,
+    results_df = hc_nn_cluster_calls(results_df, morph_data, ephys_data,
                                      n_nn=n_nn, n_cl=n_cl)
-    results_df = hc_combo_cluster_calls(results_df, morph_X, ephys_spca,
+    results_df = hc_combo_cluster_calls(results_df, morph_data, ephys_data,
                                         weights=weights, n_cl=n_cl)
-    results_df = gmm_combo_cluster_calls(results_df, morph_X, ephys_spca,
+    results_df = gmm_combo_cluster_calls(results_df, morph_data, ephys_data,
                                          weights=weights, n_cl=n_cl)
-    results_df = spectral_combo_cluster_calls(results_df, morph_X, ephys_spca,
+    results_df = spectral_combo_cluster_calls(results_df, morph_data, ephys_data,
                                               weights=weights, n_cl=n_cl)
 
     return results_df
 
 
-def usual_key_list(n_nn=[4, 7, 10], weights=[1, 2, 5], n_cl=[10, 15, 20, 25]):
-    key_order = []
-
-    for cl in n_cl:
-        subkeys = ["hc_conn"]
-        for k in subkeys:
-            for nn in n_nn:
-                key_order.append("{:s}_{:d}_{:d}".format(k, nn, cl))
-
-        subkeys = ["hc_combo", "gmm_combo", "spec_combo"]
-        for k in subkeys:
-            for wt in weights:
-                key_order.append("{:s}_{:g}_{:d}".format(k, wt, cl))
-    return key_order
-
-
-def hc_nn_cluster_calls(results_df, morph_X, ephys_spca,
+def hc_nn_cluster_calls(results_df, morph_data, ephys_data,
                         n_nn=[4, 7, 10], n_cl=[10, 15, 20, 25]):
-    pw = metrics.pairwise.pairwise_distances(ephys_spca)
+    """Add agglomerative clustering results with connectivity constraints
+
+    Parameters
+    ----------
+    results_df : DataFrame
+        Existing DataFrame that new clustering results are added to as
+        new columns
+    morph_data : array
+        Specimens by morphology features array
+    ephys_data : array
+        Specimens by electrophysiology features array
+    n_nn : list, optional
+        Set of nearest-neighbor values
+    n_cl : list, optional
+        Set of cluster numbers
+
+    Returns
+    -------
+    DataFrame
+        Combined clustering results. The index is the set of
+        `specimen_ids`. Each column contains cluster labels for a
+        different clustering variant.
+    """
+    pw = metrics.pairwise.pairwise_distances(ephys_data)
 
     for nn in n_nn:
         knn_graph = neighbors.kneighbors_graph(pw, nn, include_self=False)
@@ -71,16 +123,39 @@ def hc_nn_cluster_calls(results_df, morph_X, ephys_spca,
             model = cluster.AgglomerativeClustering(linkage="ward",
                                             connectivity=knn_graph,
                                             n_clusters=cl)
-            model.fit(morph_X)
+            model.fit(morph_data)
             results_df[key] = model.labels_
 
     return results_df
 
 
-def hc_combo_cluster_calls(results_df, morph_X, ephys_spca,
+def hc_combo_cluster_calls(results_df, morph_data, ephys_data,
                         weights=[1, 2, 5], n_cl=[10, 15, 20, 25]):
+    """Add agglomerative hierarchical clustering results
+
+    Parameters
+    ----------
+    results_df : DataFrame
+        Existing DataFrame that new clustering results are added to as
+        new columns
+    morph_data : array
+        Specimens by morphology features array
+    ephys_data : array
+        Specimens by electrophysiology features array
+    weights : list, optional
+        Set of relative electrophysiology weights
+    n_cl : list, optional
+        Set of cluster numbers
+
+    Returns
+    -------
+    DataFrame
+        Combined clustering results. The index is the set of
+        `specimen_ids`. Each column contains cluster labels for a
+        different clustering variant.
+    """
     for wt in weights:
-        EM_data = np.hstack([morph_X, wt * ephys_spca])
+        EM_data = np.hstack([morph_data, wt * ephys_data])
         for cl in n_cl:
             key = "hc_combo_{:g}_{:d}".format(wt, cl)
             model = cluster.AgglomerativeClustering(linkage="ward",
@@ -91,10 +166,33 @@ def hc_combo_cluster_calls(results_df, morph_X, ephys_spca,
     return results_df
 
 
-def gmm_combo_cluster_calls(results_df, morph_X, ephys_spca,
+def gmm_combo_cluster_calls(results_df, morph_data, ephys_data,
                         weights=[1, 2, 5], n_cl=[10, 15, 20, 25]):
+    """Add Gaussian mixture model clustering results
+
+    Parameters
+    ----------
+    results_df : DataFrame
+        Existing DataFrame that new clustering results are added to as
+        new columns
+    morph_data : array
+        Specimens by morphology features array
+    ephys_data : array
+        Specimens by electrophysiology features array
+    weights : list, optional
+        Set of relative electrophysiology weights
+    n_cl : list, optional
+        Set of cluster numbers
+
+    Returns
+    -------
+    DataFrame
+        Combined clustering results. The index is the set of
+        `specimen_ids`. Each column contains cluster labels for a
+        different clustering variant.
+    """
     for wt in weights:
-        EM_data = np.hstack([morph_X, wt * ephys_spca])
+        EM_data = np.hstack([morph_data, wt * ephys_data])
         for cl in n_cl:
             key = "gmm_combo_{:g}_{:d}".format(wt, cl)
             model = mixture.GaussianMixture(n_components=cl, covariance_type="diag", n_init=20, random_state=0)
@@ -103,10 +201,33 @@ def gmm_combo_cluster_calls(results_df, morph_X, ephys_spca,
     return results_df
 
 
-def spectral_combo_cluster_calls(results_df, morph_X, ephys_spca,
+def spectral_combo_cluster_calls(results_df, morph_data, ephys_data,
                         weights=[1, 2, 5], n_cl=[10, 15, 20, 25]):
+    """Add spectral clustering results
+
+    Parameters
+    ----------
+    results_df : DataFrame
+        Existing DataFrame that new clustering results are added to as
+        new columns
+    morph_data : array
+        Specimens by morphology features array
+    ephys_data : array
+        Specimens by electrophysiology features array
+    weights : list, optional
+        Set of relative electrophysiology weights
+    n_cl : list, optional
+        Set of cluster numbers
+
+    Returns
+    -------
+    DataFrame
+        Combined clustering results. The index is the set of
+        `specimen_ids`. Each column contains cluster labels for a
+        different clustering variant.
+    """
     for wt in weights:
-        EM_data = np.hstack([morph_X, wt * ephys_spca])
+        EM_data = np.hstack([morph_data, wt * ephys_data])
         for cl in n_cl:
             key = "spec_combo_{:g}_{:d}".format(wt, cl)
             model = cluster.SpectralClustering(cl, gamma=0.01, n_init=20, random_state=0)
@@ -114,7 +235,39 @@ def spectral_combo_cluster_calls(results_df, morph_X, ephys_spca,
     return results_df
 
 
-def consensus_clusters(results, min_clust_size = 3):
+def consensus_clusters(results, min_clust_size=3):
+    """Determine consensus clusters from multiple variations
+
+    The method iteratively divides the co-clustering matrix by Ward
+    hierarchical clustering, using the co-clustering fractions as the
+    distance measure. The iterative division stops when a resultant
+    cluster would be smaller than `min_clust_size`. Next, co-clustering
+    rates between clusters are evaluated, and clusters are merged if the
+    higher of the two within-cluster rates fails to exceed the
+    between-cluster rate by 25%. Sample assignments are then refined by
+    reassignment to the best-matched cluster (repeated until
+    convergence). This procedure is based on the one described by `Tasic
+    et al. (2018) <https://www.nature.com/articles/s41586-018-0654-5>`_.
+
+    Parameters
+    ----------
+    results : array
+        Results of multiple clustering variants. Each column contains
+        labels from a different variant.
+    min_clust_size : int, optional
+        Minimum size of consensus cluster
+
+    Returns
+    -------
+    clust_labels : array
+        Consensus cluster labels
+    shared_norm : array
+        Sample by sample matrix of the fraction of times samples were
+        placed in the same cluster
+    cc_rates : array
+        Cluster by cluster matrix of the average co-clustering rates
+        between cells in a pair of consensus clusters
+    """
     n_cells = results.shape[0]
     shared = np.zeros((n_cells, n_cells))
     for i in range(shared.shape[0]):
@@ -187,6 +340,27 @@ def consensus_clusters(results, min_clust_size = 3):
 
 
 def refine_assignments(clust_labels, shared_norm):
+    """Reassign samples to the best-matched clusters
+
+    All samples that have a better-matching cluster are reassigned at a
+    time. Since reassignment changes the matching rates, the procedure
+    is repeated until assignments no longer change or are identical to a
+    previously encountered set of assignments (meaning that the
+    algorithm has entered a cycle).
+
+    Parameters
+    ----------
+    clust_labels : array
+        Cluster assignments
+    shared_norm : array
+        Matrix of normalized cell-by-cell co-clustering rates
+
+    Returns
+    -------
+    array
+        New cluster assignments
+
+    """
     # Refine individual cell assignments
     keep_going = True
     uniq_labels = np.sort(np.unique(clust_labels))
@@ -231,33 +405,80 @@ def refine_assignments(clust_labels, shared_norm):
 
 
 def coclust_rates(shared, clust_labels, uniq_labels):
-        cc_rates = np.zeros((len(uniq_labels), len(uniq_labels)))
-        for i, l in enumerate(uniq_labels):
-            mask_l = clust_labels == l
-            for j, m in enumerate(uniq_labels[i:]):
-                mask_m = clust_labels == m
-                X = shared[mask_l, :][:, mask_m]
-                if l == m:
-                    ind1, ind2 = np.tril_indices(X.shape[0], k=-1)
-                    X = X[ind1, :][:, ind2]
-                if X.size > 0:
-                    cc_rates[i, i + j] = cc_rates[i + j, i] = X.mean()
-                else:
-                    cc_rates[i, i + j] = cc_rates[i + j, i] = 0
+    """Calculate co-clustering rates between clusters
 
-        return cc_rates
+    Parameters
+    ----------
+    shared : array
+        Matrix of normalized cell-by-cell co-clustering rates
+    clust_labels : array
+        Cluster assignments
+    uniq_labels : array
+        Set of unique cluster labels
+
+    Returns
+    -------
+    array
+        Cluster-by-cluster matrix of co-clustering rates
+    """
+    cc_rates = np.zeros((len(uniq_labels), len(uniq_labels)))
+    for i, l in enumerate(uniq_labels):
+        mask_l = clust_labels == l
+        for j, m in enumerate(uniq_labels[i:]):
+            mask_m = clust_labels == m
+            X = shared[mask_l, :][:, mask_m]
+            if l == m:
+                ind1, ind2 = np.tril_indices(X.shape[0], k=-1)
+                X = X[ind1, :][:, ind2]
+            if X.size > 0:
+                cc_rates[i, i + j] = cc_rates[i + j, i] = X.mean()
+            else:
+                cc_rates[i, i + j] = cc_rates[i + j, i] = 0
+
+    return cc_rates
 
 
-def subsample_run(original_labels, specimen_ids, morph_X, ephys_spca,
+def subsample_run(original_labels, specimen_ids, morph_data, ephys_data,
                   weights=[1, 2, 5], n_cl=[10, 15, 20, 25], n_nn=[4, 7, 10],
                   n_folds=10, n_iter=1, min_consensus_n=3):
+    """Calculate Jaccard coefficients for subsampled clustering runs
 
+    Parameters
+    ----------
+    original_labels : array
+        Cluster assignments from analysis on full data set
+    specimen_ids : array
+        Specimen labels
+    morph_data : array
+        Specimen by morphology feature matrix
+    ephys_data : array
+        Specimen by electrophysiology feature matrix
+    weights : list, optional
+        Set of relative electrophysiology weights
+    n_cl : list, optional
+        Set of cluster numbers
+    n_nn : list, optional
+        Set of nearest-neighbor values
+    n_folds : int, optional
+        Number of subsample folds
+    n_iter : int, optional
+        Number of subsampled runs to perform
+    min_consensus_n : int, optional
+        Minimum size of consensus cluster
+
+    Returns
+    -------
+    array
+        Jaccard coefficients of each cluster (rows) from each run (columns).
+        This array will have ``n_iter`` * ``n_folds`` columns.
+
+    """
     run_info_list = [{
         "iter_number": i,
         "original_labels": original_labels,
         "specimen_ids": specimen_ids,
-        "morph_X": morph_X,
-        "ephys_spca": ephys_spca,
+        "morph_data": morph_data,
+        "ephys_data": ephys_data,
         "weights": weights,
         "n_cl": n_cl,
         "n_nn": n_nn,
@@ -265,12 +486,10 @@ def subsample_run(original_labels, specimen_ids, morph_X, ephys_spca,
         "min_consensus_n": min_consensus_n,
     } for i in range(n_iter)]
 
-
-#     results = map(individual_subsample_run, run_info_list)
     p = Pool()
     logging.info("Starting multiprocessing")
     results = []
-    for i, res in enumerate(p.imap_unordered(individual_subsample_run, run_info_list, 1)):
+    for i, res in enumerate(p.imap_unordered(_individual_subsample_run, run_info_list, 1)):
         sys.stderr.write('\rdone {0:%}'.format(float(i + 1)/len(run_info_list)))
         results.append(res)
 
@@ -278,12 +497,16 @@ def subsample_run(original_labels, specimen_ids, morph_X, ephys_spca,
     return jaccards
 
 
-def individual_subsample_run(run_info):
+def _individual_subsample_run(run_info):
+    """Perform an individual subsample run
+
+    Used within :func:`subsample_run`
+    """
     i = run_info["iter_number"]
     original_labels = run_info["original_labels"]
     specimen_ids = run_info["specimen_ids"]
-    morph_X = run_info["morph_X"]
-    ephys_spca = run_info["ephys_spca"]
+    morph_data = run_info["morph_data"]
+    ephys_data = run_info["ephys_data"]
     weights = run_info["weights"]
     n_cl = run_info["n_cl"]
     n_nn = run_info["n_nn"]
@@ -299,8 +522,8 @@ def individual_subsample_run(run_info):
     for train_index, _ in kf.split(original_labels):
         logging.info("starting {:d} {:d}".format(i, counter))
         subsample_results = all_cluster_calls(specimen_ids[train_index],
-                                              morph_X[train_index, :],
-                                              ephys_spca[train_index, :],
+                                              morph_data[train_index, :],
+                                              ephys_data[train_index, :],
                                               weights=weights,
                                               n_cl=n_cl,
                                               n_nn=n_nn)
@@ -318,7 +541,3 @@ def individual_subsample_run(run_info):
         counter += 1
 
     return jaccards
-
-
-def sort_order(clust_labels):
-    return np.lexsort((clust_labels,))
