@@ -158,7 +158,7 @@ def spca_on_data_set(data, n_components, para, use_corr, max_iter=500, eps_conv=
             "transformed_values": transformed_values,
         }
     else:
-        fit = szht.spca_zht(data, K=n_components, sparse="varnum", para=para,
+        fit = spca_zht(data, K=n_components, sparse="varnum", para=para,
                             eps_conv=eps_conv, max_iter=max_iter,
                             use_corr=use_corr, trace=True)
         fit["transformed_values"] = data.dot(fit["loadings"])
