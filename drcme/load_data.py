@@ -16,11 +16,11 @@ import h5py
 import os.path
 
 
-def load_data(project="T301", use_noise=False, dendrite_type="all", need_structure=True, include_dend_type_null=False,
+def load_data(project="default", use_noise=False, dendrite_type="all", need_structure=True, include_dend_type_null=False,
               limit_to_cortical_layers=None,
-              params_file="/allen/programs/celltypes/workgroups/ivscc/nathang/single-cell-ephys/dev/default_spca_params.json",
+              params_file="default_params.json",
               restriction_file=None,
-              base_dir="/allen/programs/celltypes/workgroups/ivscc/nathang/single-cell-ephys/single_cell_ephys",
+              base_dir=".",
               step_num=50):
     # Import data
     metadata = pd.read_csv(os.path.join(base_dir, "fv_metadata_{:s}.csv".format(project)), index_col=0)
@@ -519,9 +519,10 @@ def define_spca_parameters(filename):
       deviation (true/false)
     - `range`: If null, all indices will be used. If a pair of
       values, the first value represents the first index and
-      the second represents the last index. If more than two,
+      the second represents the index just after the last point (as in
+      Python's slicing notation). If more than two,
       the first of each pair is the start index and the second
-      is the end index (this allows sections of the full feature
+      is the index just after the end (this allows sections of the full feature
       vector to be excluded).
 
     The range is expanded into a list of indices by this function.
