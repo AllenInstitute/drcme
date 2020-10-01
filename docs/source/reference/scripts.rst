@@ -50,8 +50,8 @@ The Python scripts included in this package are listed below:
     :hidden:
 
     run_ephys_clustering.sh
-    run_post_r_merging <generated/drcme.bin.run_post_r_merging>
-    run_merge_unstable_clusters <generated/drcme.bin.run_merge_unstable_clusters>
+    run_post_r_merging <drcme.bin.run_post_r_merging>
+    run_merge_unstable_clusters <drcme.bin.run_merge_unstable_clusters>
 
 
 Other utility scripts
