@@ -4,3 +4,6 @@
 
 .eggs/
 *.egg-info/
+
+docs/_build/
+docs/source/reference/generated/*

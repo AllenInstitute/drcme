@@ -1,8 +1,10 @@
-#!/usr/bin/env python
+"""
+The :mod:`drcme.post_gmm_merging` module contains functions for merging
+Gaussian mixture model components together based on an entropy criterion
+as in `Baudry et al. (2010)
+<https://www.tandfonline.com/doi/abs/10.1198/jcgs.2010.08111>`_.
+"""
 
-from __future__ import print_function
-from builtins import zip
-from builtins import range
 import numpy as np
 import pandas as pd
 from pandas import DataFrame, Series
@@ -35,6 +37,35 @@ def entropy_merges(results_dir, project="T301", gmm_type="diag", piecewise_compo
 
 
 def entropy_specific_merges(tau, labels, K_bic, clusters_to_merge):
+    """Merge set of specified clusters by entropy criterion
+
+    Parameters
+    ----------
+    tau : array
+        Cluster membership probabilities
+    labels : array
+        Cluster assignments
+    K_bic : int
+        Number of original clusters (before merging)
+    clusters_to_merge : array
+        Set of clusters to merge
+
+    Returns
+    -------
+    merge_info : dict
+        Contains information about what was merged: entropies at each
+        merge point ("entropies"), sequence of merges by indices as the
+        matrix changes size ("merge_sequence"), sequence of merges by
+        original column name ("merges_by_name"), original cluster number
+        ("K_bic"), sequence of cluster numbers ("Ks"), number of
+        cumulative points merged ("cumul_merges")
+    new_labels : array
+        Labels after merging
+    tau_merged : array
+        Cluster membership probabilities after merging
+    merge_matrix : array
+        Matrix of relationships between original clusters and merged clusters
+    """
     entropy = -np.sum(np.multiply(tau, log_p(tau)))
     prior_merges = []
     merges_by_names = []
@@ -104,6 +135,35 @@ def entropy_specific_merges(tau, labels, K_bic, clusters_to_merge):
 
 
 def entropy_combi(tau, labels, K_bic, piecewise_components=2):
+    """Merge clusters by entropy criterion and piecewise fit
+
+    Parameters
+    ----------
+    tau : array
+        Cluster membership probabilities
+    labels : array
+        Cluster assignments
+    K_bic : int
+        Number of original clusters (before merging)
+    piecewise_components : {2, 3}, optional
+        Number of components of linear piecewise fit
+
+    Returns
+    -------
+    merge_info : dict
+        Contains information about what was merged: entropies at each
+        merge point ("entropies"), sequence of merges by indices as the
+        matrix changes size ("merge_sequence"), sequence of merges by
+        original column name ("merges_by_name"), original cluster number
+        ("K_bic"), sequence of cluster numbers ("Ks"), number of
+        cumulative points merged ("cumul_merges")
+    new_labels : array
+        Labels after merging
+    tau_merged : array
+        Cluster membership probabilities after merging
+    merge_matrix : array
+        Matrix of relationships between original clusters and merged clusters
+    """
     entropy = -np.sum(np.multiply(tau, log_p(tau)))
     prior_merges = []
     entropies = [entropy]
@@ -179,6 +239,28 @@ def entropy_combi(tau, labels, K_bic, piecewise_components=2):
 
 
 def fit_piecewise(cumul_merges, entropies, n_parts):
+    """ Fit entropy vs cumulative merge number with linear piecewise function
+
+    Parameters
+    ----------
+    cumul_merges : array
+        Number of cumulative samples merged at each merge step. Length
+        must be `n_parts` + 2 or more and same length as `entropies`.
+    entropies : array
+        Entropy values at each merge step. Length must be
+        `n_parts` + 2 or more and same length as `cumul_merges`.
+    n_parts : {2, 3}
+        Number of components for linear fit
+
+    Returns
+    -------
+    best_fits : tuple
+        Fit parameters for each component. Length of tuple equals
+        `n_parts`
+    cp : tuple
+        Locations of change point(s) for linear fits. Length of tuple
+        equals `n_parts` - 1
+    """
     total_err = np.inf
 
     if len(entropies) < n_parts + 2:
@@ -235,6 +317,28 @@ def fit_piecewise(cumul_merges, entropies, n_parts):
 
 
 def order_new_labels(new_labels, tau_merged, data):
+    """Reorder cluster labels by similarity of centroids
+
+    Parameters
+    ----------
+    new_labels : array
+        Cluster labels for samples
+    tau_merged : array
+        Cluster membership probability matrix to be reordered
+    data : array
+        Data matrix
+
+    Returns
+    -------
+    new_labels_reorder : list
+        Cluster labels for samples after labels have been reordered
+    tau_merged : array
+        Cluster membership probability matrix following new cluster order
+    new_labels_reorder_dict : dict
+        Mapping from previous labels (keys) to newly orderered labels (values)
+    leaves : array
+        Original labels as leaves of hierarchical clustering of centroids
+    """
     uniq_labels = np.unique(new_labels)
     uniq_labels = uniq_labels[~np.isnan(uniq_labels)]
     n_cl = len(uniq_labels)
@@ -244,9 +348,6 @@ def order_new_labels(new_labels, tau_merged, data):
     Z = hierarchy.linkage(centroids, method="ward")
     D = hierarchy.dendrogram(Z, no_plot=True)
     leaves = np.array(D["leaves"])
-    # put singletons at the end
-#     is_singleton = np.array([np.sum(new_labels == l) == 1 for l in leaves])
-#     leaves = np.hstack([leaves[~is_singleton], leaves[is_singleton]])
     new_labels_reorder_dict = {d: i for i, d in enumerate(leaves)}
     tau_merged = tau_merged[:, leaves]
     new_labels_reorder = [new_labels_reorder_dict[d] if not np.isnan(d) else d for d in new_labels]

@@ -1,4 +1,12 @@
-#!/usr/bin/env python
+"""
+Script to cluster on combined electrophysiology and morphology data.
+
+The script runs multiple clustering variants, determines consensus clusters, and
+finally evaluates the stability of each cluster.
+
+.. autoclass:: MeClusteringParameters
+
+"""
 
 import numpy as np
 import pandas as pd
@@ -9,20 +17,34 @@ import sys
 
 
 class MeClusteringParameters(ags.ArgSchema):
-    ephys_file = ags.fields.InputFile()
-    morph_file = ags.fields.InputFile()
-    weights = ags.fields.List(ags.fields.Float,
-                              cli_as_single_argument=True,
-                              default=[1., 2., 4.])
-    n_cl = ags.fields.List(ags.fields.Integer,
+    """Parameter schema for electrophysiology/morphology clustering"""
+    ephys_file = ags.fields.InputFile(
+        description="CSV file path with sparse PCA electrophysiology values")
+    morph_file = ags.fields.InputFile(
+        description="CSV file path with morphology parameter values")
+    weights = ags.fields.List(
+        ags.fields.Float,
+        description="List of relative weights for the electrophysiology values",
+        cli_as_single_argument=True,
+        default=[1., 2., 4.])
+    n_cl = ags.fields.List(
+        ags.fields.Integer,
+        description="List of number of clusters for initial clustering algorithms",
         cli_as_single_argument=True,
         default=[10, 15, 20, 25])
-    min_consensus_n = ags.fields.Integer(default=3)
-    cocluster_matrix_file = ags.fields.OutputFile()
-    cluster_labels_file = ags.fields.OutputFile()
-    specimen_id_file = ags.fields.OutputFile()
-    jaccards_file = ags.fields.OutputFile()
-    ordering_file = ags.fields.OutputFile()
+    min_consensus_n = ags.fields.Integer(
+        default=3,
+        description="Minimum cluster size for consensus clusters")
+    cocluster_matrix_file = ags.fields.OutputFile(
+        description="Output file path for co-clustering matrix")
+    cluster_labels_file = ags.fields.OutputFile(
+        description="Output file path for cluster labels")
+    specimen_id_file = ags.fields.OutputFile(
+        description="Output file path for specimen IDs")
+    jaccards_file = ags.fields.OutputFile(
+        description="Output file path for Jaccard coefficients")
+    ordering_file = ags.fields.OutputFile(
+        description="Output file path for new cluster order")
 
 
 def main(ephys_file, morph_file,
@@ -30,6 +52,11 @@ def main(ephys_file, morph_file,
          cluster_labels_file, jaccards_file, ordering_file,
          specimen_id_file,
          **kwargs):
+    """ Main runner function for script.
+
+    See :class:`MeClusteringParameters` for argument descriptions.
+    """
+
     # Load the data
     ephys_data = pd.read_csv(ephys_file, index_col=0)
 
@@ -53,7 +80,7 @@ def main(ephys_file, morph_file,
                                        n_cl=n_cl)
     clust_labels, shared, cc_rates = emc.consensus_clusters(
         results_df.values[:, 1:], min_clust_size=min_consensus_n)
-    new_order = emc.sort_order(clust_labels)
+    new_order = np.lexsort((clust_labels,))
 
     logging.info(f"Identified {len(np.unique(clust_labels))} consensus clusters with full data set")
 

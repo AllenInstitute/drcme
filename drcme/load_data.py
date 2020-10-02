@@ -1,5 +1,12 @@
-from builtins import zip
-from builtins import range
+"""
+The :mod:`drcme.load_data` module contains functions for loading
+electrophysiology feature vectors processed by the `IPFX package
+<http://ipfx.readthedocs.io>`_, as well as sPCA parameter files.
+In particular, it loads in HDF5-format files containing feature vectors
+processed by the :mod:`run_feature_vector_extraction script
+<ipfx:ipfx.bin.run_feature_vector_extraction>`.
+"""
+
 import numpy as np
 import pandas as pd
 from pandas import DataFrame, Series
@@ -9,11 +16,11 @@ import h5py
 import os.path
 
 
-def load_data(project="T301", use_noise=False, dendrite_type="all", need_structure=True, include_dend_type_null=False,
+def load_data(project="default", use_noise=False, dendrite_type="all", need_structure=True, include_dend_type_null=False,
               limit_to_cortical_layers=None,
-              params_file="/allen/programs/celltypes/workgroups/ivscc/nathang/single-cell-ephys/dev/default_spca_params.json",
+              params_file="default_params.json",
               restriction_file=None,
-              base_dir="/allen/programs/celltypes/workgroups/ivscc/nathang/single-cell-ephys/single_cell_ephys",
+              base_dir=".",
               step_num=50):
     # Import data
     metadata = pd.read_csv(os.path.join(base_dir, "fv_metadata_{:s}.csv".format(project)), index_col=0)
@@ -323,8 +330,9 @@ def load_h5_data(h5_fv_file, params_file, metadata_file=None, dendrite_type="all
         include_dend_type_null=True,
         limit_to_cortical_layers=None,
         id_file=None):
-    """Load dictionary for sPCA processing from HDF5 file with specified
-       metadata filters
+    """Load dictionary for sPCA processing from HDF5 file
+
+    The data can also be filtered by several metadata values.
 
     Parameters
     ----------
@@ -332,27 +340,27 @@ def load_h5_data(h5_fv_file, params_file, metadata_file=None, dendrite_type="all
         Path to feature vector HDF5 file
     params_file: str
         Path to sPCA parameters JSON file
-    metadata_file: str (optional, default None)
+    metadata_file: str, optional
         Path to metadata CSV file
-    dendrite_type: str (optional, default 'all')
-        Dendrite type for filtering ('all', 'spiny', 'aspiny') (only used
-        if metadata file is supplied)
-    need_structure: bool (optional, default False)
+    dendrite_type: {'all', 'spiny', 'aspiny'}, optional
+        Dendrite type for filtering (only used if metadata file is
+        supplied)
+    need_structure: bool, optional
         Requires that structure is present (only used
         if metadata file is supplied)
-    need_ramp_spike: bool (optional, default True)
+    need_ramp_spike: bool, optional
         Requires that the ramp spike is non-zero (aka not missing)
-    include_dend_type_null: bool (optional, default True)
+    include_dend_type_null: bool, optional
         Also include cells without a dendrite type available regardless of
         what `dendrite_type` is specified (only used
         if metadata file is supplied)
-    limit_to_cortical_layers: list (optional, default None)
+    limit_to_cortical_layers: list, optional
         List of cortical layers that metadata must match for inclusion (only used
         if metadata file is supplied)
-    id_file: str (optional, default None)
+    id_file: str, optional
         Path to text file with IDs to use
 
-    Results
+    Returns
     -------
     data_for_spca: dict
         Dictionary of data sets for sPCA analysis
@@ -440,24 +448,24 @@ def mask_for_metadata(specimen_ids, metadata_df, dendrite_type="all",
         Specimen IDs for cells to filter
     metadata_df: DataFrame
         DataFrame of metadata
-    dendrite_type: str (optional, default 'all')
-        Dendrite type for filtering ('all', 'spiny', 'aspiny') (only used
-        if metadata file is supplied)
-    need_structure: bool (optional, default False)
+    dendrite_type: {'all', 'spiny', 'aspiny'}, optional
+        Dendrite type for filtering (only used if metadata file is
+        supplied)
+    need_structure: bool, optional
         Requires that structure is present (only used
         if metadata file is supplied)
-    include_dend_type_null: bool (optional, default True)
-        Also include cells without a dendrite type available regardless of
-        what `dendrite_type` is specified (only used
-        if metadata file is supplied)
-    limit_to_cortical_layers: list (optional, default None)
-        List of cortical layers that metadata must match for inclusion (only used
-        if metadata file is supplied)
+    include_dend_type_null: bool, optional
+        Also include cells without a dendrite type available regardless
+        of what `dendrite_type` is specified (only used if metadata file
+        is supplied)
+    limit_to_cortical_layers: list, optional
+        List of cortical layers that metadata must match for inclusion
+        (only used if metadata file is supplied)
 
     Results
     -------
-    mask: array of shape (len(specimen_ids), )
-        Boolean mask for filtered cells
+    array
+        Boolean mask for filtered cells with size `len(specimen_ids)``
     """
 
     # Limit to specimen_ids
@@ -498,9 +506,38 @@ def mask_for_metadata(specimen_ids, metadata_df, dendrite_type="all",
     return dend_struct_mask & layer_mask
 
 
-def define_spca_parameters(filename="/allen/programs/celltypes/workgroups/ivscc/nathang/single-cell-ephys/dev/default_spca_params.json"):
-    # Parameters found
-    # (n_components, n nonzero component list, use_corr, data_range)
+def define_spca_parameters(filename):
+    """Load an sPCA parameters file
+
+    The parameters file should be a set of keys with dictionaries as
+    their values. Each dictionary must contain the following keys:
+
+    - `n_components`: Number of components
+    - `nonzero_component_list`: List of the number of non-zero
+      loadings for each component
+    - `use_corr`: Whether to scale the data by its standard
+      deviation (true/false)
+    - `range`: If null, all indices will be used. If a pair of
+      values, the first value represents the first index and
+      the second represents the index just after the last point (as in
+      Python's slicing notation). If more than two,
+      the first of each pair is the start index and the second
+      is the index just after the end (this allows sections of the full feature
+      vector to be excluded).
+
+    The range is expanded into a list of indices by this function.
+
+    Parameters
+    ----------
+    filename : str
+        Path to JSON file with sPCA parameters
+
+    Returns
+    -------
+    dict
+        Contains key/tuple pairs. The tuple has the format
+        (`n_components`, `nonzero_component_list`, `use_corr`, `indices`).
+    """
     with open(filename, "r") as f:
         json_data = json.load(f)
 
@@ -523,7 +560,6 @@ def define_spca_parameters(filename="/allen/programs/celltypes/workgroups/ivscc/
             d["use_corr"],
             indices,
         )
-
 
     if "inst_freq_norm" in json_data and "step_num" in json_data["inst_freq_norm"]:
         step_num = json_data["inst_freq_norm"]["step_num"]

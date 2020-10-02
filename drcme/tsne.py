@@ -1,10 +1,34 @@
+"""
+The :mod:`drcme.tsne` module contains wrapper functions for
+applying t-SNE to the electrophysiology and morphology data.
+"""
 import numpy as np
 import pandas as pd
 from sklearn import manifold
 import logging
 
 
-def combined_tsne(df_1, df_2, n_components=2, perplexity=25, n_iter=20000):
+def combined_tsne(df_1, df_2, perplexity=25, n_iter=20000):
+    """Perform t-SNE on two data sets
+
+    Parameters
+    ----------
+    df_1 : DataFrame
+        First data set
+    df_2 : DataFrame
+        Second data set
+    perplexity : float
+        t-SNE perplexity parameter
+    n_iter : int
+        Maximum number of iterations for t-SNE optimization
+
+    Returns
+    -------
+    DataFrame
+        Contains "x" and "y" coordinates for 2D t-SNE embedding of
+        combined data set
+    """
+
     all_together = np.vstack([df_1.values, df_2.values])
     all_ids = df_1.index.tolist() + df_2.index.tolist()
 
@@ -16,7 +40,28 @@ def combined_tsne(df_1, df_2, n_components=2, perplexity=25, n_iter=20000):
 
 
 def dual_modal_tsne(ephys_df, morph_df, relative_ephys_weight=1.,
-                    n_components=2, perplexity=25, n_iter=20000):
+                    perplexity=25, n_iter=20000):
+    """Perform t-SNE on electrophysiology and morphology data sets
+
+    Parameters
+    ----------
+    ephys_df : DataFrame
+        Electrophysiology data set
+    morph_df : DataFrame
+        Morphology data set
+    relative_ephys_weight : float, optional
+        Relative weighting of electrophysiology data
+    perplexity : float
+        t-SNE perplexity parameter
+    n_iter : int
+        Maximum number of iterations for t-SNE optimization
+
+    Returns
+    -------
+    DataFrame
+        Contains "x" and "y" coordinates for 2D t-SNE embedding for samples
+        that exist in both `ephys_df` and `morph_df`
+    """
     morph_ids = morph_df.index.values
 
     # Get ephys data for cells with morphologies
