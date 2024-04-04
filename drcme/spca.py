@@ -195,16 +195,13 @@ def orig_mean_and_std_for_zscore(spca_results, orig_data, spca_params,
         Standard deviations of sPCs
     """
     Z_list = []
-    for ds in orig_data:
-        data = ds["data"]
-        for k in ds["part_keys"]:
-            _, _, _, indices = spca_params[k]
-            d = data[:, indices]
-            above_thresh = spca_results[k]["pev"] >= pev_threshold
-            Z = d.dot(spca_results[k]["loadings"][:, above_thresh])
-            if np.any(np.isnan(Z)):
-                print("NaNs found", k)
-            Z_list.append(Z)
+    subset_data = select_data_subset(orig_data, spca_params)
+    for k, d in subset_data.items():
+        above_thresh = spca_results[k]["pev"] >= pev_threshold
+        Z = d.dot(spca_results[k]["loadings"][:, above_thresh])
+        if np.any(np.isnan(Z)):
+            print("NaNs found", k)
+        Z_list.append(Z)
 
     combo_orig = np.hstack(Z_list)
     return combo_orig.mean(axis=0), combo_orig.std(axis=0)
@@ -238,16 +235,13 @@ def spca_transform_new_data(spca_results, new_data, spca_zht_params, orig_mean, 
         Transformed and z-scored sPC values
     """
     Z_list = []
-    for ds in new_data:
-        data = ds["data"]
-        for k in ds["part_keys"]:
-            _, _, _, indices = spca_zht_params[k]
-            d = data[:, indices]
-            above_thresh = spca_results[k]["pev"] >= pev_threshold
-            Z = d.dot(spca_results[k]["loadings"][:, above_thresh])
-            if np.any(np.isnan(Z)):
-                print("NaNs found", k)
-            Z_list.append(Z)
+    subset_data = select_data_subset(new_data, spca_zht_params)
+    for k, d in subset_data.items():
+        above_thresh = spca_results[k]["pev"] >= pev_threshold
+        Z = d.dot(spca_results[k]["loadings"][:, above_thresh])
+        if np.any(np.isnan(Z)):
+            print("NaNs found", k)
+        Z_list.append(Z)
 
     combo_new = np.hstack(Z_list)
     combo = (combo_new - orig_mean) / orig_std
