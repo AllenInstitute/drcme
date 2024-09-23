@@ -117,7 +117,7 @@ def hc_nn_cluster_calls(results_df, morph_data, ephys_data,
     pw = metrics.pairwise.pairwise_distances(ephys_data)
 
     for nn in n_nn:
-        knn_graph = neighbors.kneighbors_graph(pw, nn, include_self=False)
+        knn_graph = neighbors.kneighbors_graph(pw, nn, include_self=False, n_jobs=-1)
         for cl in n_cl:
             key = "hc_conn_{:d}_{:d}".format(nn, cl)
             model = cluster.AgglomerativeClustering(linkage="ward",
@@ -125,7 +125,6 @@ def hc_nn_cluster_calls(results_df, morph_data, ephys_data,
                                             n_clusters=cl)
             model.fit(morph_data)
             results_df[key] = model.labels_
-
     return results_df
 
 
@@ -477,8 +476,8 @@ def subsample_run(original_labels, specimen_ids, morph_data, ephys_data,
         "iter_number": i,
         "original_labels": original_labels,
         "specimen_ids": specimen_ids,
-        "morph_data": morph_data,
-        "ephys_data": ephys_data,
+        "morph_data": morph_data.copy(),
+        "ephys_data": ephys_data.copy(),
         "weights": weights,
         "n_cl": n_cl,
         "n_nn": n_nn,
@@ -486,12 +485,7 @@ def subsample_run(original_labels, specimen_ids, morph_data, ephys_data,
         "min_consensus_n": min_consensus_n,
     } for i in range(n_iter)]
 
-    p = Pool()
-    logging.info("Starting multiprocessing")
-    results = []
-    for i, res in enumerate(p.imap_unordered(_individual_subsample_run, run_info_list, 1)):
-        sys.stderr.write('\rdone {0:%}'.format(float(i + 1)/len(run_info_list)))
-        results.append(res)
+    results = [_individual_subsample_run(ri) for ri in run_info_list]
 
     jaccards = np.hstack(results)
     return jaccards
@@ -529,6 +523,7 @@ def _individual_subsample_run(run_info):
                                               n_nn=n_nn)
         subsample_labels, _, _ = consensus_clusters(
             subsample_results.values[:, 1:], min_clust_size=min_consensus_n)
+        logging.info(f"done with {i} {counter}")
 
         sub_uniq = np.sort(np.unique(subsample_labels))
         for ii, orig_cl in enumerate(orig_labels_uniq):

@@ -60,6 +60,9 @@ def main(ephys_file, morph_file,
     # Load the data
     ephys_data = pd.read_csv(ephys_file, index_col=0)
 
+    # Remove duplicate entries (if present)
+    ephys_data = ephys_data[~ephys_data.index.duplicated(keep='first')]
+
     # Expect already normalized wide dataframe
     morph_data = pd.read_csv(morph_file, index_col=0)
     morph_ids = morph_data.index.values
