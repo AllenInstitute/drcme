@@ -98,7 +98,7 @@ def main(orig_transform_file, orig_datasets, new_datasets, params_file,
                                             params_file=params_file)
         orig_data_objects.append(data_for_spca)
         orig_specimen_ids_list.append(specimen_ids)
-    orig_data_for_spca = []
+    orig_data_for_spca = {}
     for i, do in enumerate(orig_data_objects):
         for k in do:
             if k not in orig_data_for_spca:
@@ -128,7 +128,7 @@ def main(orig_transform_file, orig_datasets, new_datasets, params_file,
                                             params_file=params_file)
         new_data_objects.append(data_for_spca)
         new_specimen_ids_list.append(specimen_ids)
-    data_for_spca = []
+    data_for_spca = {}
     for i, do in enumerate(new_data_objects):
         for k in do:
             if k not in data_for_spca:
