@@ -29,19 +29,19 @@
         "use_corr": false,
         "range": [0, 140]
     },
-    "spiking_rate": {
+    "psth": {
         "n_components": 6,
         "nonzero_component_list": [95, 80, 100, 70, 70, 70],
         "use_corr": false,
         "range": [0, 120]
     },
-    "spiking_inst_freq": {
+    "inst_freq": {
         "n_components": 6,
         "nonzero_component_list": [300, 275, 225, 275, 250, 225],
         "use_corr": false,
         "range": [120, 420]
     },
-    "spiking_updown": {
+    "spiking_upstroke_downstroke_ratio": {
         "n_components": 3,
         "nonzero_component_list": [300, 275, 250],
         "use_corr": false,
